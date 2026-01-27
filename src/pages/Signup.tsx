@@ -9,67 +9,75 @@ import { Plane } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const isValidEmail = (value: string) => {
+    // Basic, pragmatic email validation (client-side only).
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Passwords do not match',
-        description: 'Please make sure both passwords are the same.',
-        variant: 'destructive',
-      });
+
+    const normalizedEmail = email.trim();
+
+    // STEP 4 - Debug logs
+    console.log('SIGNUP STARTED with:', normalizedEmail, `*** (${password.length} chars)`);
+
+    // STEP 4 - Client-side validation (fast fail)
+    if (!isValidEmail(normalizedEmail)) {
+      const message = 'Please enter a valid email address.';
+      console.error('SIGNUP ERROR: invalid email format');
+      toast({ title: 'Invalid email', description: message, variant: 'destructive' });
+      alert('Error: ' + message);
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        title: 'Password too short',
-        description: 'Password must be at least 6 characters.',
-        variant: 'destructive',
-      });
+      const message = 'Password must be at least 6 characters.';
+      console.error('SIGNUP ERROR: weak password');
+      toast({ title: 'Password too weak', description: message, variant: 'destructive' });
+      alert('Error: ' + message);
       return;
     }
 
     setIsLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name,
-        },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-
-    // Debug logging
-    console.log('Signup response:', { data, error });
-
-    setIsLoading(false);
-
-    if (error) {
-      console.error('Signup error:', error);
-      toast({
-        title: 'Signup failed',
-        description: error.message,
-        variant: 'destructive',
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
       });
-    } else {
-      console.log('Signup successful, user:', data.user);
-      toast({
-        title: 'Account created!',
-        description: 'Welcome to NxVoy!',
-      });
+
+      console.log('SIGNUP RESPONSE:', { data, error });
+
+      if (error) {
+        console.error('SIGNUP ERROR:', error);
+        toast({
+          title: 'Signup failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        alert('Error: ' + error.message);
+        return;
+      }
+
+      console.log('SIGNUP SUCCESS:', data);
+      toast({ title: 'Account created!', description: 'Welcome to NxVoy!' });
+      alert('Account created! Check your backend now.');
       navigate('/dashboard');
+    } catch (err) {
+      // Network errors / unexpected runtime errors
+      console.error('SIGNUP ERROR (network/unexpected):', err);
+      const message = err instanceof Error ? err.message : 'Network error. Please try again.';
+      toast({ title: 'Network error', description: message, variant: 'destructive' });
+      alert('Error: ' + message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,21 +91,10 @@ const Signup = () => {
             </div>
           </div>
           <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Start planning your trips with Shasa</CardDescription>
+          <CardDescription>Create your NxVoy account to access your dashboard</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -114,27 +111,22 @@ const Signup = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder="Create a password (min 6 chars)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
             <Button type="submit" className="w-full btn-primary-gradient border-0" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                  Creating account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
