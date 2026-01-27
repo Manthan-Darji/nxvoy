@@ -114,9 +114,23 @@ Only return valid JSON, no markdown or other text.`;
     // Parse JSON from response
     let itinerary;
     try {
-      // Handle markdown code blocks
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
-      const cleanJson = jsonMatch[1].trim();
+      // Clean up the content - handle various AI response formats
+      let cleanJson = content.trim();
+      
+      // Remove markdown code blocks if present
+      const codeBlockMatch = cleanJson.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        cleanJson = codeBlockMatch[1].trim();
+      }
+      
+      // Try to extract JSON object if there's extra text before/after
+      const jsonStartIndex = cleanJson.indexOf('{');
+      const jsonEndIndex = cleanJson.lastIndexOf('}');
+      if (jsonStartIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+        cleanJson = cleanJson.substring(jsonStartIndex, jsonEndIndex + 1);
+      }
+      
+      console.log("Parsing JSON of length:", cleanJson.length);
       const parsed = JSON.parse(cleanJson);
       
       // Transform to consistent format for frontend
@@ -140,10 +154,12 @@ Only return valid JSON, no markdown or other text.`;
       } else {
         itinerary = parsed;
       }
+      
+      console.log("Successfully parsed itinerary with", itinerary.length, "days");
     } catch (e) {
-      console.error("Failed to parse itinerary:", content, e);
+      console.error("Failed to parse itinerary:", content.substring(0, 500), e);
       return new Response(
-        JSON.stringify({ error: "Failed to parse itinerary response" }),
+        JSON.stringify({ error: "Failed to parse itinerary response", details: String(e) }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
