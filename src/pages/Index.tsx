@@ -5,6 +5,7 @@ import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
+import ShasaFAB from "@/components/ShasaFAB";
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
       <Testimonials />
       <Newsletter />
       <Footer />
+      <ShasaFAB />
     </main>
   );
 };

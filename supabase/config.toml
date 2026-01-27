@@ -1,1 +1,4 @@
 project_id = "pjbzfueihodvmyuyygew"
+
+[functions.shasa-chat]
+verify_jwt = false
