@@ -1,16 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
 import { Send, Sparkles, User, Trash2, X } from 'lucide-react';
 import { useShasa, ChatMessage } from '@/hooks/useShasa';
 import ReactMarkdown from 'react-markdown';
+import { format } from 'date-fns';
 
 interface ShasaChatProps {
   onClose?: () => void;
   initialMessage?: string;
 }
+
+const quickActions = [
+  "Plan Weekend Trip",
+  "Budget Travel",
+  "Luxury Vacation"
+];
 
 const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
   const [input, setInput] = useState('');
@@ -34,6 +40,11 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
     }
   }, [initialMessage, sendMessage, messages.length]);
 
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
@@ -42,26 +53,32 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
     }
   };
 
+  const handleQuickAction = (action: string) => {
+    if (!isLoading) {
+      sendMessage(action);
+    }
+  };
+
   return (
-    <Card className="flex flex-col h-[600px] max-h-[80vh] w-full max-w-2xl bg-card border-border shadow-xl">
+    <div className="flex flex-col h-full md:h-[600px] bg-white dark:bg-card">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-blue-600 to-teal-500">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Shasa</h3>
-            <p className="text-xs text-muted-foreground">Your AI Travel Assistant</p>
+            <h3 className="font-semibold text-white">Shasa</h3>
+            <p className="text-xs text-white/80">Your AI Travel Assistant</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {messages.length > 0 && (
             <Button
               variant="ghost"
               size="icon"
               onClick={clearChat}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-white/80 hover:text-white hover:bg-white/20"
               title="Clear chat"
             >
               <Trash2 className="w-4 h-4" />
@@ -72,121 +89,173 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-white/80 hover:text-white hover:bg-white/20"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </Button>
           )}
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
-            <h4 className="font-semibold text-foreground mb-2">Hey there! I'm Shasa ✈️</h4>
-            <p className="text-muted-foreground text-sm max-w-sm">
-              Your AI travel companion. Ask me anything about trip planning, destinations, 
-              local tips, or let me help you create the perfect itinerary!
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4 justify-center">
-              {[
-                "Plan a weekend getaway",
-                "Best places to visit in Japan",
-                "Budget travel tips"
-              ].map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => sendMessage(suggestion)}
-                >
-                  {suggestion}
-                </Button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <MessageBubble key={index} message={message} />
-            ))}
-            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-background"
+      >
+        <AnimatePresence mode="popLayout">
+          {messages.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center h-full text-center p-6"
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20 flex items-center justify-center mb-4">
+                <Sparkles className="w-10 h-10 text-blue-600" />
+              </div>
+              <h4 className="font-semibold text-foreground text-lg mb-2">Hey there! I'm Shasa ✈️</h4>
+              <p className="text-muted-foreground text-sm max-w-[280px]">
+                Your AI travel companion. Ask me anything about trip planning, destinations, or let me help create your perfect itinerary!
+              </p>
+            </motion.div>
+          ) : (
+            messages.map((message, index) => (
+              <MessageBubble 
+                key={index} 
+                message={message} 
+                isLatest={index === messages.length - 1}
+              />
+            ))
+          )}
+        </AnimatePresence>
+        
+        {/* Typing indicator */}
+        <AnimatePresence>
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div className="bg-white dark:bg-muted rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                <div className="flex gap-1.5">
+                  <motion.span 
+                    className="w-2 h-2 bg-gray-400 rounded-full"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.span 
+                    className="w-2 h-2 bg-gray-400 rounded-full"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                  />
+                  <motion.span 
+                    className="w-2 h-2 bg-gray-400 rounded-full"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                  />
                 </div>
               </div>
-            )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Quick Actions */}
+      {messages.length === 0 && (
+        <div className="px-4 py-2 border-t border-border bg-white dark:bg-card">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {quickActions.map((action) => (
+              <motion.button
+                key={action}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleQuickAction(action)}
+                className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-full bg-gradient-to-r from-blue-50 to-teal-50 text-blue-700 border border-blue-200 hover:border-blue-300 transition-colors dark:from-blue-900/20 dark:to-teal-900/20 dark:text-blue-300 dark:border-blue-800"
+              >
+                {action}
+              </motion.button>
+            ))}
           </div>
-        )}
-      </ScrollArea>
+        </div>
+      )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-border">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-white dark:bg-card">
         <div className="flex gap-2">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Shasa anything about travel..."
+            placeholder="Where do you want to go?"
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 rounded-full bg-gray-100 dark:bg-muted border-0 focus-visible:ring-2 focus-visible:ring-blue-500"
           />
-          <Button 
-            type="submit" 
-            disabled={!input.trim() || isLoading}
-            className="btn-primary-gradient border-0"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button 
+              type="submit" 
+              disabled={!input.trim() || isLoading}
+              size="icon"
+              className="rounded-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 border-0 w-10 h-10"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </motion.div>
         </div>
       </form>
-    </Card>
+    </div>
   );
 };
 
-const MessageBubble = ({ message }: { message: ChatMessage }) => {
+interface MessageBubbleProps {
+  message: ChatMessage;
+  isLatest: boolean;
+}
+
+const MessageBubble = ({ message, isLatest }: MessageBubbleProps) => {
   const isUser = message.role === 'user';
+  const timestamp = format(new Date(), 'h:mm a');
 
   return (
-    <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className={`flex items-end gap-2 ${isUser ? 'flex-row-reverse' : ''}`}
+    >
       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
         isUser 
-          ? 'bg-secondary' 
-          : 'bg-gradient-to-br from-primary to-accent'
+          ? 'bg-gray-200 dark:bg-secondary' 
+          : 'bg-gradient-to-br from-blue-600 to-teal-500'
       }`}>
         {isUser ? (
-          <User className="w-4 h-4 text-secondary-foreground" />
+          <User className="w-4 h-4 text-gray-600 dark:text-secondary-foreground" />
         ) : (
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
+          <Sparkles className="w-4 h-4 text-white" />
         )}
       </div>
-      <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-        isUser 
-          ? 'bg-primary text-primary-foreground rounded-tr-sm' 
-          : 'bg-muted text-foreground rounded-tl-sm'
-      }`}>
-        {isUser ? (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        )}
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[75%]`}>
+        <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+          isUser 
+            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-br-sm' 
+            : 'bg-white dark:bg-muted text-foreground rounded-bl-sm'
+        }`}>
+          {isUser ? (
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          ) : (
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+        <span className={`text-[10px] text-muted-foreground mt-1 px-1 ${isUser ? 'text-right' : 'text-left'}`}>
+          {timestamp}
+        </span>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

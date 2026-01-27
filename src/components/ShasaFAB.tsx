@@ -1,21 +1,41 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle } from 'lucide-react';
 import ShasaChatModal from './ShasaChatModal';
 
 const ShasaFAB = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <>
-      <Button
+      <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full btn-primary-gradient border-0 shadow-lg hover:shadow-xl transition-all hover:scale-105 z-50"
-        size="icon"
-        aria-label="Open Shasa AI Assistant"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg hover:shadow-xl transition-shadow"
+        style={{ padding: isHovered ? '16px 20px' : '16px' }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        aria-label="Chat with Shasa"
       >
-        <Sparkles className="w-6 h-6" />
-      </Button>
+        <MessageCircle className="w-7 h-7" />
+        <AnimatePresence>
+          {isHovered && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              className="text-sm font-medium whitespace-nowrap overflow-hidden"
+            >
+              Chat with Shasa
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
       <ShasaChatModal open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
