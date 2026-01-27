@@ -4,17 +4,17 @@ const features = [
   {
     icon: Sparkles,
     title: "Smart Itinerary Generator",
-    description: "AI-powered day-by-day plans tailored to your preferences, budget, and travel style. No more hours of research.",
+    description: "AI creates day-by-day plans instantly",
   },
   {
     icon: Route,
     title: "Route Optimization",
-    description: "Save hours with intelligent routing that maps the most efficient paths between destinations and attractions.",
+    description: "Save hours with intelligent routing",
   },
   {
     icon: Plane,
     title: "Flight Status Tracker",
-    description: "Real-time aviation updates keep you informed about delays, gate changes, and weather conditions.",
+    description: "Real-time aviation updates",
   },
 ];
 
@@ -28,7 +28,7 @@ const Features = () => {
             Features
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Why Travelers <span className="gradient-text">Love Shasa</span>
+            Why <span className="gradient-text">NxVoy?</span>
           </h2>
           <p className="text-muted-foreground text-lg">
             Powerful AI tools that transform how you plan and experience travel.

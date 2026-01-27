@@ -45,14 +45,13 @@ const Hero = () => {
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-            Plan your perfect trip in minutes. Shasa creates personalized itineraries, 
-            optimizes routes, and keeps you updated with real-time travel insights.
+            Plan perfect trips in seconds with AI-powered itineraries
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: "0.3s" }}>
             <button className="btn-primary-gradient bg-white text-primary hover:bg-white/90">
-              <span className="gradient-text font-bold">Start Planning</span>
+              <span className="gradient-text font-bold">Start Planning Free</span>
               <ArrowRight className="w-5 h-5 text-primary" />
             </button>
             <button className="btn-outline-hero">
