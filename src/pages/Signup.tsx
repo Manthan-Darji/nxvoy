@@ -40,7 +40,7 @@ const Signup = () => {
 
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -51,15 +51,20 @@ const Signup = () => {
       },
     });
 
+    // Debug logging
+    console.log('Signup response:', { data, error });
+
     setIsLoading(false);
 
     if (error) {
+      console.error('Signup error:', error);
       toast({
         title: 'Signup failed',
         description: error.message,
         variant: 'destructive',
       });
     } else {
+      console.log('Signup successful, user:', data.user);
       toast({
         title: 'Account created!',
         description: 'Welcome to NxVoy!',
