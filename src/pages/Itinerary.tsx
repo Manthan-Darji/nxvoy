@@ -31,6 +31,8 @@ interface ItineraryItem {
   start_time: string | null;
   end_time: string | null;
   location: string | null;
+  latitude: number | null;
+  longitude: number | null;
   estimated_cost: number | null;
   category: string | null;
 }
@@ -112,6 +114,8 @@ const Itinerary = () => {
         startTime: item.start_time || '09:00',
         endTime: item.end_time || '12:00',
         location: item.location || '',
+        latitude: item.latitude,
+        longitude: item.longitude,
         estimatedCost: item.estimated_cost || 0,
         category: item.category || 'attraction',
       })),

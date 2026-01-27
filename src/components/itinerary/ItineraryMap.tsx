@@ -76,10 +76,14 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
       if (selectedDay && dayData.day !== selectedDay) return;
       
       dayData.activities.forEach((activity, index) => {
-        if (activity.coordinates?.lat && activity.coordinates?.lng) {
+        // Support both latitude/longitude and coordinates format
+        const lat = activity.latitude ?? (activity as any).coordinates?.lat;
+        const lng = activity.longitude ?? (activity as any).coordinates?.lng;
+        
+        if (lat && lng) {
           allMarkers.push({
-            lat: activity.coordinates.lat,
-            lng: activity.coordinates.lng,
+            lat: lat,
+            lng: lng,
             name: activity.title,
             time: activity.startTime || '',
             day: dayData.day,
