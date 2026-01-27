@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, Heart, Users, Sparkles, X } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Heart, Users, Sparkles, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TripDetails, generateItinerary } from '@/services/tripService';
@@ -18,6 +18,8 @@ interface TripPreviewCardProps {
 
 const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const createdTripIdRef = useRef<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -31,7 +33,22 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
     }
   };
 
+  const cleanupTrip = async (tripId: string) => {
+    console.log('[TripPreviewCard] Cleaning up failed trip:', tripId);
+    try {
+      // Delete itinerary items first (if any were created)
+      await supabase.from('itineraries').delete().eq('trip_id', tripId);
+      // Delete the trip
+      await supabase.from('trips').delete().eq('id', tripId);
+      console.log('[TripPreviewCard] Cleanup successful');
+    } catch (cleanupError) {
+      console.error('[TripPreviewCard] Cleanup failed:', cleanupError);
+    }
+  };
+
   const handleGenerateItinerary = async () => {
+    console.log('[TripPreviewCard] Starting itinerary generation');
+    
     if (!user) {
       toast({
         title: 'Please log in',
@@ -51,11 +68,14 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
     }
 
     setIsGenerating(true);
+    setError(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[TripPreviewCard] Session obtained:', !!session);
 
       // 1. Create trip in database
+      console.log('[TripPreviewCard] Creating trip in database...');
       const { data: trip, error: tripError } = await supabase
         .from('trips')
         .insert({
@@ -70,9 +90,16 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
         .select()
         .single();
 
-      if (tripError) throw tripError;
+      if (tripError) {
+        console.error('[TripPreviewCard] Trip creation failed:', tripError);
+        throw tripError;
+      }
+
+      console.log('[TripPreviewCard] Trip created:', trip.id);
+      createdTripIdRef.current = trip.id;
 
       // 2. Generate itinerary via AI
+      console.log('[TripPreviewCard] Calling AI to generate itinerary...');
       const itineraryDays = await generateItinerary(
         {
           destination: tripDetails.destination,
@@ -85,7 +112,10 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
         session?.access_token
       );
 
+      console.log('[TripPreviewCard] Itinerary generated:', itineraryDays.length, 'days');
+
       // 3. Save itinerary items to database
+      console.log('[TripPreviewCard] Saving itinerary items...');
       const itineraryItems = itineraryDays.flatMap(day =>
         day.activities.map(activity => ({
           trip_id: trip.id,
@@ -95,16 +125,25 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
           start_time: activity.startTime,
           end_time: activity.endTime,
           location: activity.location,
+          latitude: activity.latitude || null,
+          longitude: activity.longitude || null,
           estimated_cost: activity.estimatedCost,
           category: activity.category,
         }))
       );
 
+      console.log('[TripPreviewCard] Inserting', itineraryItems.length, 'activities');
+      
       const { error: itineraryError } = await supabase
         .from('itineraries')
         .insert(itineraryItems);
 
-      if (itineraryError) throw itineraryError;
+      if (itineraryError) {
+        console.error('[TripPreviewCard] Itinerary insert failed:', itineraryError);
+        throw itineraryError;
+      }
+
+      console.log('[TripPreviewCard] Itinerary items saved successfully');
 
       // 4. Update trip status
       await supabase
@@ -112,20 +151,33 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
         .update({ status: 'planned' })
         .eq('id', trip.id);
 
+      console.log('[TripPreviewCard] Trip status updated to planned');
+
       toast({
         title: 'Itinerary created! 🎉',
         description: `Your trip to ${tripDetails.destination} is ready.`,
       });
 
       // 5. Close chat and navigate
+      createdTripIdRef.current = null; // Clear ref on success
       onClose?.();
       navigate(`/itinerary/${trip.id}`);
 
     } catch (error) {
-      console.error('Failed to generate itinerary:', error);
+      console.error('[TripPreviewCard] Generation failed:', error);
+      
+      // Cleanup orphaned trip if one was created
+      if (createdTripIdRef.current) {
+        await cleanupTrip(createdTripIdRef.current);
+        createdTripIdRef.current = null;
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
+      setError(errorMessage);
+      
       toast({
         title: 'Failed to generate itinerary',
-        description: error instanceof Error ? error.message : 'Please try again.',
+        description: 'Click Retry to try again.',
         variant: 'destructive',
       });
     } finally {
@@ -205,11 +257,29 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
               <Sparkles className="w-6 h-6 text-white" />
             </motion.div>
             <p className="text-sm font-medium text-foreground mb-1">
-              Shasa is crafting your perfect itinerary... ✨
+              Creating your itinerary... ✨
             </p>
             <p className="text-xs text-muted-foreground">
-              Finding the best experiences for your trip
+              This may take 15-20 seconds
             </p>
+          </div>
+        ) : error ? (
+          <div className="space-y-3">
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive font-medium">
+                Oops! Generation failed
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {error}
+              </p>
+            </div>
+            <Button
+              onClick={handleGenerateItinerary}
+              className="w-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white border-0"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
           </div>
         ) : (
           <Button

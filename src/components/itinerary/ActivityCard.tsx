@@ -15,7 +15,8 @@ export interface Activity {
   startTime: string;
   endTime: string;
   location: string;
-  coordinates?: { lat: number; lng: number };
+  latitude?: number | null;
+  longitude?: number | null;
   estimatedCost: number;
   category: string;
   duration?: number;
@@ -82,8 +83,8 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
   const config = categoryConfig[activity.category] || categoryConfig.attraction;
 
   const handleGetDirections = () => {
-    if (activity.coordinates) {
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${activity.coordinates.lat},${activity.coordinates.lng}`;
+    if (activity.latitude && activity.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${activity.latitude},${activity.longitude}`;
       window.open(url, '_blank');
     } else if (activity.location) {
       const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`;

@@ -14,12 +14,16 @@ export interface ItineraryActivity {
   startTime: string;
   endTime: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   estimatedCost: number;
   category: string;
+  duration?: number;
 }
 
 export interface ItineraryDay {
   day: number;
+  date?: string;
   activities: ItineraryActivity[];
 }
 
@@ -49,6 +53,8 @@ export async function generateItinerary(
   tripDetails: Omit<TripDetails, 'isComplete'>,
   accessToken?: string
 ): Promise<ItineraryDay[]> {
+  console.log('[tripService] Calling generate-itinerary with:', tripDetails);
+  
   const response = await fetch(`${BASE_URL}/functions/v1/generate-itinerary`, {
     method: 'POST',
     headers: {
@@ -58,10 +64,16 @@ export async function generateItinerary(
     body: JSON.stringify(tripDetails),
   });
 
+  console.log('[tripService] Response status:', response.status);
+
   if (!response.ok) {
-    throw new Error('Failed to generate itinerary');
+    const errorData = await response.json().catch(() => ({}));
+    console.error('[tripService] Error response:', errorData);
+    throw new Error(errorData.error || errorData.hint || 'Failed to generate itinerary');
   }
 
   const data = await response.json();
+  console.log('[tripService] Received itinerary with', data.itinerary?.length, 'days');
+  
   return data.itinerary;
 }

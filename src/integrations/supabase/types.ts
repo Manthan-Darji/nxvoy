@@ -58,7 +58,9 @@ export type Database = {
           end_time: string | null
           estimated_cost: number | null
           id: string
+          latitude: number | null
           location: string | null
+          longitude: number | null
           notes: string | null
           start_time: string | null
           title: string
@@ -73,7 +75,9 @@ export type Database = {
           end_time?: string | null
           estimated_cost?: number | null
           id?: string
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           notes?: string | null
           start_time?: string | null
           title: string
@@ -88,7 +92,9 @@ export type Database = {
           end_time?: string | null
           estimated_cost?: number | null
           id?: string
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           notes?: string | null
           start_time?: string | null
           title?: string
