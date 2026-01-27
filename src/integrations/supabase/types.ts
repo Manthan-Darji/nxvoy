@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          trip_id: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          trip_id?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          trip_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itineraries: {
+        Row: {
+          category: string | null
+          created_at: string
+          day_number: number
+          description: string | null
+          end_time: string | null
+          estimated_cost: number | null
+          id: string
+          location: string | null
+          notes: string | null
+          start_time: string | null
+          title: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          day_number: number
+          description?: string | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_time?: string | null
+          title: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          day_number?: number
+          description?: string | null
+          end_time?: string | null
+          estimated_cost?: number | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_time?: string | null
+          title?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itineraries_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -36,6 +127,81 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          budget: number | null
+          created_at: string
+          destination: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          destination: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          destination?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          accessibility_needs: string[] | null
+          budget_range: string | null
+          created_at: string
+          dietary_restrictions: string[] | null
+          id: string
+          preferred_activities: string[] | null
+          travel_style: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accessibility_needs?: string[] | null
+          budget_range?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          id?: string
+          preferred_activities?: string[] | null
+          travel_style?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accessibility_needs?: string[] | null
+          budget_range?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          id?: string
+          preferred_activities?: string[] | null
+          travel_style?: string[] | null
           updated_at?: string
           user_id?: string
         }
