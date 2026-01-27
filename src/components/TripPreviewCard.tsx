@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, Heart, Users, Sparkles, X, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Heart, Users, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TripDetails, generateItinerary } from '@/services/tripService';
@@ -195,23 +195,31 @@ const TripPreviewCard = ({ tripDetails, onDismiss, onClose }: TripPreviewCardPro
           )}
         </div>
 
-        <Button
-          onClick={handleGenerateItinerary}
-          disabled={isGenerating}
-          className="w-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white border-0"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating Itinerary...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Itinerary
-            </>
-          )}
-        </Button>
+        {isGenerating ? (
+          <div className="py-4 text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+              className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center"
+            >
+              <Sparkles className="w-6 h-6 text-white" />
+            </motion.div>
+            <p className="text-sm font-medium text-foreground mb-1">
+              Shasa is crafting your perfect itinerary... ✨
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Finding the best experiences for your trip
+            </p>
+          </div>
+        ) : (
+          <Button
+            onClick={handleGenerateItinerary}
+            className="w-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white border-0"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Generate Itinerary
+          </Button>
+        )}
       </Card>
     </motion.div>
   );
