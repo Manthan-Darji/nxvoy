@@ -4,17 +4,17 @@ const features = [
   {
     icon: Sparkles,
     title: "Smart Itinerary Generator",
-    description: "AI creates day-by-day plans instantly",
+    description: "AI creates personalized day-by-day plans in seconds",
   },
   {
     icon: Route,
     title: "Route Optimization",
-    description: "Save hours with intelligent routing",
+    description: "Save hours with intelligent routing between locations",
   },
   {
     icon: Plane,
     title: "Flight Status Tracker",
-    description: "Real-time aviation updates",
+    description: "Real-time aviation updates and delay alerts",
   },
 ];
 
@@ -24,11 +24,11 @@ const Features = () => {
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-nxvoy-teal-light text-accent text-sm font-semibold mb-4">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-semibold mb-4">
             Features
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Why <span className="gradient-text">NxVoy?</span>
+            Why Choose <span className="gradient-text">NxVoy?</span>
           </h2>
           <p className="text-muted-foreground text-lg">
             Powerful AI tools that transform how you plan and experience travel.
@@ -42,9 +42,9 @@ const Features = () => {
               key={feature.title}
               className="relative group"
             >
-              <div className="bg-card rounded-3xl p-8 h-full shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-card rounded-3xl p-8 h-full shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2 border border-border/50">
                 {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1E40AF] to-[#14B8A6] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
 
@@ -57,7 +57,7 @@ const Features = () => {
                 </p>
 
                 {/* Decorative gradient */}
-                <div className="absolute inset-0 rounded-3xl gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300 -z-10" />
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#1E40AF]/5 to-[#14B8A6]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
               </div>
             </div>
           ))}
