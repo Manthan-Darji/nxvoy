@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const SYSTEM_PROMPT = `You are a professional travel planner. You MUST return ONLY valid JSON - no markdown, no explanations, no text before or after the JSON.
+Your response must be a single JSON object that can be parsed by JSON.parse().`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,18 +34,13 @@ serve(async (req) => {
       dates.push(date.toISOString().split('T')[0]);
     }
 
-    const prompt = `Create a detailed ${days}-day itinerary for ${destination} with budget $${budget} USD.
-
-For each day, provide:
-- Morning activity (9 AM - 12 PM): attraction name, location, description, estimated cost, duration
-- Afternoon activity (1 PM - 5 PM): same details  
-- Evening activity (6 PM - 9 PM): same details
-- Restaurant recommendations for lunch and dinner with cuisine type
-
-Consider these interests: ${interests?.join(', ') || 'general sightseeing'}
+    const prompt = `Create a ${days}-day itinerary for ${destination} with budget $${budget} USD.
+Interests: ${interests?.join(', ') || 'general sightseeing'}
 Traveler type: ${tripType || 'solo'}
 
-Return as JSON:
+For EACH day provide 4 activities: morning (9AM), afternoon (2PM), evening (6PM), dinner (8PM).
+
+Return this exact JSON structure:
 {
   "days": [
     {
@@ -52,36 +50,23 @@ Return as JSON:
         {
           "time": "09:00",
           "endTime": "12:00",
-          "name": "Activity Name",
-          "location": "Full address or area",
-          "coordinates": {"lat": 0.0, "lng": 0.0},
+          "name": "Place Name",
+          "location": "Address",
           "duration": 180,
           "cost": 25,
           "category": "attraction",
-          "description": "Brief description of the activity"
-        },
-        {
-          "time": "12:30",
-          "endTime": "14:00",
-          "name": "Lunch at Restaurant Name",
-          "location": "Restaurant address",
-          "coordinates": {"lat": 0.0, "lng": 0.0},
-          "duration": 90,
-          "cost": 30,
-          "category": "food",
-          "cuisine": "Local/Italian/etc",
-          "description": "Description of the restaurant and recommended dishes"
+          "description": "Brief description"
         }
       ]
     }
   ],
-  "totalCost": 450,
-  "summary": "Brief trip summary highlighting key experiences"
+  "totalCost": 450
 }
 
-Categories to use: attraction, food, adventure, culture, relaxation, shopping, nightlife, transport
-Make it realistic, fun, and within budget. Include mix of must-sees and hidden gems.
-Only return valid JSON, no markdown or other text.`;
+Categories: attraction, food, adventure, culture, relaxation, shopping, nightlife, transport.
+Keep descriptions brief (under 100 characters). Return ONLY the JSON object.`;
+
+    console.log("Generating itinerary for", destination, "- Days:", days);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -90,12 +75,13 @@ Only return valid JSON, no markdown or other text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
+          { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: prompt },
         ],
-        temperature: 0.8,
-        max_tokens: 4000,
+        temperature: 0.7,
+        max_tokens: 8000,
       }),
     });
 
@@ -109,8 +95,10 @@ Only return valid JSON, no markdown or other text.`;
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "[]";
+    const content = data.choices?.[0]?.message?.content || "";
     
+    console.log("Received response length:", content.length);
+
     // Parse JSON from response
     let itinerary;
     try {
@@ -130,36 +118,53 @@ Only return valid JSON, no markdown or other text.`;
         cleanJson = cleanJson.substring(jsonStartIndex, jsonEndIndex + 1);
       }
       
+      // Check if JSON appears complete (basic validation)
+      const openBraces = (cleanJson.match(/{/g) || []).length;
+      const closeBraces = (cleanJson.match(/}/g) || []).length;
+      const openBrackets = (cleanJson.match(/\[/g) || []).length;
+      const closeBrackets = (cleanJson.match(/\]/g) || []).length;
+      
+      if (openBraces !== closeBraces || openBrackets !== closeBrackets) {
+        console.error("JSON appears incomplete - brace mismatch. Open braces:", openBraces, "Close braces:", closeBraces);
+        throw new Error("Incomplete JSON response from AI");
+      }
+      
       console.log("Parsing JSON of length:", cleanJson.length);
       const parsed = JSON.parse(cleanJson);
       
-      // Transform to consistent format for frontend
-      if (parsed.days) {
-        itinerary = parsed.days.map((day: any) => ({
-          day: day.dayNumber,
-          date: day.date,
-          activities: day.activities.map((a: any) => ({
-            title: a.name,
-            description: a.description,
-            startTime: a.time,
-            endTime: a.endTime,
-            location: a.location,
-            coordinates: a.coordinates,
-            estimatedCost: a.cost,
-            category: a.category,
-            duration: a.duration,
-            cuisine: a.cuisine,
-          })),
-        }));
-      } else {
-        itinerary = parsed;
+      // Validate the structure
+      if (!parsed.days || !Array.isArray(parsed.days)) {
+        throw new Error("Invalid itinerary structure - missing days array");
       }
+      
+      // Transform to consistent format for frontend
+      itinerary = parsed.days.map((day: any) => ({
+        day: day.dayNumber,
+        date: day.date,
+        activities: (day.activities || []).map((a: any) => ({
+          title: a.name || "Activity",
+          description: a.description || "",
+          startTime: a.time || "09:00",
+          endTime: a.endTime || "12:00",
+          location: a.location || destination,
+          coordinates: a.coordinates,
+          estimatedCost: a.cost || 0,
+          category: a.category || "attraction",
+          duration: a.duration || 120,
+          cuisine: a.cuisine,
+        })),
+      }));
       
       console.log("Successfully parsed itinerary with", itinerary.length, "days");
     } catch (e) {
-      console.error("Failed to parse itinerary:", content.substring(0, 500), e);
+      console.error("Failed to parse itinerary. Error:", e);
+      console.error("Raw content (first 1000 chars):", content.substring(0, 1000));
       return new Response(
-        JSON.stringify({ error: "Failed to parse itinerary response", details: String(e) }),
+        JSON.stringify({ 
+          error: "Failed to parse itinerary response", 
+          details: String(e),
+          hint: "The AI response may have been truncated or malformed"
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
