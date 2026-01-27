@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Sparkles, User, Trash2, X } from 'lucide-react';
 import { useShasa, ChatMessage } from '@/hooks/useShasa';
+import TripPreviewCard from './TripPreviewCard';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 
@@ -20,7 +21,7 @@ const quickActions = [
 
 const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
   const [input, setInput] = useState('');
-  const { messages, isLoading, sendMessage, clearChat } = useShasa();
+  const { messages, isLoading, sendMessage, clearChat, tripDetails, dismissTripDetails } = useShasa();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
@@ -30,7 +31,7 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, tripDetails]);
 
   // Send initial message if provided
   useEffect(() => {
@@ -128,6 +129,17 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
           )}
         </AnimatePresence>
         
+        {/* Trip Preview Card */}
+        <AnimatePresence>
+          {tripDetails?.isComplete && (
+            <TripPreviewCard 
+              tripDetails={tripDetails} 
+              onDismiss={dismissTripDetails}
+              onClose={onClose}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Typing indicator */}
         <AnimatePresence>
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
@@ -217,7 +229,7 @@ interface MessageBubbleProps {
 
 const MessageBubble = ({ message, isLatest }: MessageBubbleProps) => {
   const isUser = message.role === 'user';
-  const timestamp = format(new Date(), 'h:mm a');
+  const timestamp = format(message.timestamp, 'h:mm a');
 
   return (
     <motion.div

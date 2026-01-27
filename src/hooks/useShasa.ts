@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { extractTripDetails, TripDetails } from '@/services/tripService';
 
 export type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
+  timestamp: Date;
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shasa-chat`;
@@ -12,12 +14,37 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shasa-chat`;
 export function useShasa() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const { toast } = useToast();
+  const extractionTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const extractDetails = useCallback(async (msgs: ChatMessage[]) => {
+    if (msgs.length < 2) return; // Need at least one exchange
+    
+    try {
+      setIsExtracting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const details = await extractTripDetails(
+        msgs.map(m => ({ role: m.role, content: m.content })),
+        session?.access_token
+      );
+      setTripDetails(details);
+    } catch (error) {
+      console.error('Failed to extract trip details:', error);
+    } finally {
+      setIsExtracting(false);
+    }
+  }, []);
 
   const sendMessage = useCallback(async (input: string) => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = { role: 'user', content: input.trim() };
+    const userMessage: ChatMessage = { 
+      role: 'user', 
+      content: input.trim(),
+      timestamp: new Date()
+    };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
@@ -33,7 +60,7 @@ export function useShasa() {
             i === prev.length - 1 ? { ...m, content: assistantContent } : m
           );
         }
-        return [...prev, { role: 'assistant', content: assistantContent }];
+        return [...prev, { role: 'assistant', content: assistantContent, timestamp: new Date() }];
       });
     };
 
@@ -106,6 +133,18 @@ export function useShasa() {
           } catch { /* ignore */ }
         }
       }
+
+      // Extract trip details after response (debounced)
+      if (extractionTimeout.current) {
+        clearTimeout(extractionTimeout.current);
+      }
+      extractionTimeout.current = setTimeout(() => {
+        setMessages(current => {
+          extractDetails(current);
+          return current;
+        });
+      }, 1000);
+
     } catch (error) {
       console.error('Shasa chat error:', error);
       toast({
@@ -113,7 +152,6 @@ export function useShasa() {
         description: error instanceof Error ? error.message : 'Failed to get response',
         variant: 'destructive',
       });
-      // Remove the pending assistant message if error
       setMessages((prev) => 
         prev[prev.length - 1]?.role === 'assistant' && prev[prev.length - 1]?.content === ''
           ? prev.slice(0, -1)
@@ -122,11 +160,24 @@ export function useShasa() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, toast]);
+  }, [messages, isLoading, toast, extractDetails]);
 
   const clearChat = useCallback(() => {
     setMessages([]);
+    setTripDetails(null);
   }, []);
 
-  return { messages, isLoading, sendMessage, clearChat };
+  const dismissTripDetails = useCallback(() => {
+    setTripDetails(null);
+  }, []);
+
+  return { 
+    messages, 
+    isLoading, 
+    sendMessage, 
+    clearChat, 
+    tripDetails, 
+    isExtracting,
+    dismissTripDetails 
+  };
 }
