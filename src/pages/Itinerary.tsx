@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  MapPin, Calendar, DollarSign, Clock, ArrowLeft, 
-  Utensils, Camera, Mountain, Palette, Bed, Car
-} from 'lucide-react';
-import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Calendar, Map } from 'lucide-react';
+import ItineraryHeader from '@/components/itinerary/ItineraryHeader';
+import ItineraryTimeline from '@/components/itinerary/ItineraryTimeline';
+import ItineraryMap from '@/components/itinerary/ItineraryMap';
+import { Activity } from '@/components/itinerary/ActivityCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Trip {
   id: string;
@@ -35,23 +35,10 @@ interface ItineraryItem {
   category: string | null;
 }
 
-const categoryIcons: Record<string, React.ReactNode> = {
-  food: <Utensils className="w-4 h-4" />,
-  sightseeing: <Camera className="w-4 h-4" />,
-  adventure: <Mountain className="w-4 h-4" />,
-  culture: <Palette className="w-4 h-4" />,
-  relaxation: <Bed className="w-4 h-4" />,
-  transport: <Car className="w-4 h-4" />,
-};
-
-const categoryColors: Record<string, string> = {
-  food: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-  sightseeing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  adventure: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  culture: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  relaxation: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
-  transport: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
-};
+interface DayData {
+  day: number;
+  activities: Activity[];
+}
 
 const Itinerary = () => {
   const { tripId } = useParams<{ tripId: string }>();
@@ -60,6 +47,8 @@ const Itinerary = () => {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [itinerary, setItinerary] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -79,9 +68,14 @@ const Itinerary = () => {
         .from('trips')
         .select('*')
         .eq('id', tripId)
-        .single();
+        .maybeSingle();
 
       if (tripError) throw tripError;
+      if (!tripData) {
+        setTrip(null);
+        setIsLoading(false);
+        return;
+      }
       setTrip(tripData);
 
       // Fetch itinerary items
@@ -101,39 +95,72 @@ const Itinerary = () => {
     }
   };
 
-  // Group itinerary by day
-  const groupedByDay = itinerary.reduce((acc, item) => {
-    const day = item.day_number;
-    if (!acc[day]) acc[day] = [];
-    acc[day].push(item);
-    return acc;
-  }, {} as Record<number, ItineraryItem[]>);
+  // Transform itinerary items to DayData format
+  const days: DayData[] = useMemo(() => {
+    const grouped = itinerary.reduce((acc, item) => {
+      const day = item.day_number;
+      if (!acc[day]) acc[day] = [];
+      acc[day].push(item);
+      return acc;
+    }, {} as Record<number, ItineraryItem[]>);
+
+    return Object.entries(grouped).map(([day, items]) => ({
+      day: parseInt(day),
+      activities: items.map(item => ({
+        title: item.title,
+        description: item.description || '',
+        startTime: item.start_time || '09:00',
+        endTime: item.end_time || '12:00',
+        location: item.location || '',
+        estimatedCost: item.estimated_cost || 0,
+        category: item.category || 'attraction',
+      })),
+    }));
+  }, [itinerary]);
 
   const totalCost = itinerary.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
 
+  // Loading State
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container max-w-4xl mx-auto px-4 py-8">
-          <Skeleton className="h-10 w-64 mb-4" />
-          <Skeleton className="h-6 w-48 mb-8" />
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
+        <div className="bg-gradient-to-r from-blue-600 to-teal-500 py-8">
+          <div className="container max-w-7xl mx-auto px-4">
+            <Skeleton className="h-8 w-64 mb-2 bg-white/20" />
+            <Skeleton className="h-6 w-48 bg-white/20" />
+          </div>
+        </div>
+        <div className="container max-w-7xl mx-auto px-4 py-8">
+          <div className="grid lg:grid-cols-5 gap-8">
+            <div className="lg:col-span-3 space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+            <div className="lg:col-span-2">
+              <Skeleton className="h-[400px] w-full" />
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Not Found State
   if (!trip) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container max-w-4xl mx-auto px-4 py-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">Trip not found</h1>
+        <div className="container max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+            <Calendar className="w-12 h-12 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Trip not found</h1>
+          <p className="text-muted-foreground mb-6">
+            This trip may have been deleted or you don't have access to it.
+          </p>
           <Button onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
@@ -143,132 +170,63 @@ const Itinerary = () => {
     );
   }
 
+  // Mobile Layout with Tabs
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <ItineraryHeader trip={trip} totalCost={totalCost} />
+
+        <div className="container mx-auto px-4 py-4">
+          <Tabs defaultValue="timeline" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="timeline" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger value="map" className="flex items-center gap-2">
+                <Map className="w-4 h-4" />
+                Map
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="timeline" className="mt-0">
+              <ItineraryTimeline
+                days={days}
+                startDate={trip.start_date}
+              />
+            </TabsContent>
+
+            <TabsContent value="map" className="mt-0">
+              <ItineraryMap days={days} selectedDay={selectedDay} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout with Split View
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container max-w-4xl mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/dashboard')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
+      <ItineraryHeader trip={trip} totalCost={totalCost} />
 
-        {/* Trip Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                <MapPin className="w-8 h-8 text-blue-600" />
-                Trip to {trip.destination}
-              </h1>
-              <div className="flex flex-wrap gap-4 mt-3 text-muted-foreground">
-                {trip.start_date && trip.end_date && (
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
-                    {format(new Date(trip.start_date), 'MMM d')} - {format(new Date(trip.end_date), 'MMM d, yyyy')}
-                  </span>
-                )}
-                {trip.budget && (
-                  <span className="flex items-center gap-1.5">
-                    <DollarSign className="w-4 h-4" />
-                    Budget: ${trip.budget.toLocaleString()}
-                  </span>
-                )}
-              </div>
-            </div>
-            <Badge variant="outline" className="capitalize">
-              {trip.status || 'planning'}
-            </Badge>
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Timeline Section - 60% */}
+          <div className="lg:col-span-3">
+            <ItineraryTimeline
+              days={days}
+              startDate={trip.start_date}
+            />
           </div>
 
-          {/* Budget Summary */}
-          <Card className="p-4 bg-gradient-to-r from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Estimated Total Cost</span>
-              <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                ${totalCost.toLocaleString()}
-              </span>
-            </div>
-            {trip.budget && (
-              <div className="mt-2 h-2 bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-600 to-teal-500 transition-all"
-                  style={{ width: `${Math.min((totalCost / trip.budget) * 100, 100)}%` }}
-                />
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Itinerary Days */}
-        <div className="space-y-8">
-          {Object.entries(groupedByDay).map(([day, items]) => (
-            <div key={day}>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white flex items-center justify-center text-sm font-bold">
-                  {day}
-                </span>
-                Day {day}
-              </h2>
-              
-              <div className="space-y-3 ml-4 border-l-2 border-blue-200 dark:border-blue-800 pl-6">
-                {items.map((item) => (
-                  <Card key={item.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">{item.title}</h3>
-                          {item.category && (
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${categoryColors[item.category] || categoryColors.sightseeing}`}
-                            >
-                              {categoryIcons[item.category] || categoryIcons.sightseeing}
-                              <span className="ml-1 capitalize">{item.category}</span>
-                            </Badge>
-                          )}
-                        </div>
-                        {item.description && (
-                          <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                        )}
-                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          {(item.start_time || item.end_time) && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {item.start_time}{item.end_time && ` - ${item.end_time}`}
-                            </span>
-                          )}
-                          {item.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {item.location}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {item.estimated_cost !== null && item.estimated_cost > 0 && (
-                        <span className="text-sm font-medium text-green-600 dark:text-green-400 whitespace-nowrap">
-                          ${item.estimated_cost}
-                        </span>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {itinerary.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No itinerary items yet. Chat with Shasa to generate one!</p>
+          {/* Map Section - 40% */}
+          <div className="lg:col-span-2 lg:sticky lg:top-4 lg:self-start">
+            <ItineraryMap days={days} selectedDay={selectedDay} />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
