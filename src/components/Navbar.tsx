@@ -1,9 +1,19 @@
 import { useState } from "react";
-import { Menu, X, Plane } from "lucide-react";
+import { Menu, X, Plane, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isLoading, profile } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -27,12 +37,31 @@ const Navbar = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" className="font-medium">
-              Login
-            </Button>
-            <Button className="btn-primary-gradient border-0">
-              Get Started
-            </Button>
+            {isLoading ? (
+              <div className="h-10 w-20 bg-muted animate-pulse rounded-md"></div>
+            ) : user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Hi, {profile?.name || user.email?.split('@')[0]}
+                </span>
+                <Button variant="ghost" onClick={() => navigate('/dashboard')} className="font-medium">
+                  Dashboard
+                </Button>
+                <Button variant="outline" onClick={handleLogout} className="gap-2">
+                  <LogOut className="w-4 h-4" />
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/login')} className="font-medium">
+                  Login
+                </Button>
+                <Button onClick={() => navigate('/signup')} className="btn-primary-gradient border-0">
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -54,12 +83,31 @@ const Navbar = () => {
               <a href="#testimonials" className="nav-link py-2">Testimonials</a>
               <a href="#pricing" className="nav-link py-2">Pricing</a>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
-                <Button variant="ghost" className="w-full justify-start font-medium">
-                  Login
-                </Button>
-                <Button className="btn-primary-gradient border-0 w-full">
-                  Get Started
-                </Button>
+                {isLoading ? (
+                  <div className="h-10 bg-muted animate-pulse rounded-md"></div>
+                ) : user ? (
+                  <>
+                    <p className="text-sm text-muted-foreground px-2">
+                      Hi, {profile?.name || user.email?.split('@')[0]}
+                    </p>
+                    <Button variant="ghost" onClick={() => navigate('/dashboard')} className="w-full justify-start font-medium">
+                      Dashboard
+                    </Button>
+                    <Button variant="outline" onClick={handleLogout} className="w-full gap-2">
+                      <LogOut className="w-4 h-4" />
+                      Log Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" onClick={() => navigate('/login')} className="w-full justify-start font-medium">
+                      Login
+                    </Button>
+                    <Button onClick={() => navigate('/signup')} className="btn-primary-gradient border-0 w-full">
+                      Sign Up
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
