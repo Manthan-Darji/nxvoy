@@ -1,12 +1,8 @@
-import { useState } from "react";
 import { Sparkles, ArrowRight, MapPin, Plane, Globe, Compass } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   return (
     <>
@@ -73,7 +69,7 @@ const Hero = () => {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
                 <button 
-                  onClick={() => setChatOpen(true)}
+                  onClick={() => navigate('/signup')}
                   className="group inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-bold text-primary bg-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 >
                   <span>Start Planning Free</span>
@@ -150,35 +146,6 @@ const Hero = () => {
         </div>
       </section>
 
-      {/* Chat Modal */}
-      <Dialog open={chatOpen} onOpenChange={setChatOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              Chat with Shasa
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-secondary/50 rounded-xl p-4">
-              <p className="text-sm text-muted-foreground">
-                👋 Hi! I'm Shasa, your AI travel assistant. Tell me about your dream trip and I'll help you plan it!
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Where would you like to go?"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="flex-1"
-              />
-              <Button className="gradient-primary text-white">
-                Send
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
