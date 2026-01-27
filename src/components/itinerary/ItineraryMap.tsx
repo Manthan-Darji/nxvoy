@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { MapPin, Navigation } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
+import { MapPin, Navigation, AlertCircle, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Activity } from './ActivityCard';
@@ -14,6 +15,15 @@ interface ItineraryMapProps {
   selectedDay?: number;
 }
 
+interface MarkerData {
+  lat: number;
+  lng: number;
+  name: string;
+  time: string;
+  day: number;
+  index: number;
+}
+
 const dayColors = [
   '#3B82F6', // blue
   '#10B981', // green
@@ -25,16 +35,42 @@ const dayColors = [
   '#F97316', // orange
 ];
 
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+  minHeight: '400px',
+};
+
+const defaultCenter = { lat: 48.8566, lng: 2.3522 }; // Paris as default
+
+const mapOptions: google.maps.MapOptions = {
+  disableDefaultUI: false,
+  zoomControl: true,
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: true,
+  styles: [
+    {
+      featureType: 'poi',
+      elementType: 'labels',
+      stylers: [{ visibility: 'off' }],
+    },
+  ],
+};
+
 const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
+  const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey || '',
+  });
+
   // Get all locations with coordinates
   const markers = useMemo(() => {
-    const allMarkers: Array<{
-      lat: number;
-      lng: number;
-      name: string;
-      day: number;
-      index: number;
-    }> = [];
+    const allMarkers: MarkerData[] = [];
 
     days.forEach(dayData => {
       if (selectedDay && dayData.day !== selectedDay) return;
@@ -45,6 +81,7 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
             lat: activity.coordinates.lat,
             lng: activity.coordinates.lng,
             name: activity.title,
+            time: activity.startTime || '',
             day: dayData.day,
             index: index + 1,
           });
@@ -57,7 +94,7 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
 
   // Calculate center of all markers
   const center = useMemo(() => {
-    if (markers.length === 0) return null;
+    if (markers.length === 0) return defaultCenter;
     
     const sumLat = markers.reduce((sum, m) => sum + m.lat, 0);
     const sumLng = markers.reduce((sum, m) => sum + m.lng, 0);
@@ -68,25 +105,47 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
     };
   }, [markers]);
 
-  // Generate Google Maps Static URL
-  const mapUrl = useMemo(() => {
-    if (markers.length === 0 || !center) return null;
+  // Create polyline path for routes
+  const polylinePaths = useMemo(() => {
+    if (selectedDay) {
+      // Single day - one polyline
+      const dayMarkers = markers.filter(m => m.day === selectedDay);
+      return [{
+        path: dayMarkers.map(m => ({ lat: m.lat, lng: m.lng })),
+        color: dayColors[(selectedDay - 1) % dayColors.length],
+      }];
+    }
+    
+    // All days - separate polylines per day
+    const paths: { path: { lat: number; lng: number }[]; color: string }[] = [];
+    const groupedByDay: Record<number, MarkerData[]> = {};
+    
+    markers.forEach(m => {
+      if (!groupedByDay[m.day]) groupedByDay[m.day] = [];
+      groupedByDay[m.day].push(m);
+    });
+    
+    Object.entries(groupedByDay).forEach(([day, dayMarkers]) => {
+      paths.push({
+        path: dayMarkers.map(m => ({ lat: m.lat, lng: m.lng })),
+        color: dayColors[(parseInt(day) - 1) % dayColors.length],
+      });
+    });
+    
+    return paths;
+  }, [markers, selectedDay]);
 
-    const markerParams = markers
-      .map((m, i) => {
-        const color = dayColors[(m.day - 1) % dayColors.length].replace('#', '0x');
-        return `markers=color:${color}%7Clabel:${m.index}%7C${m.lat},${m.lng}`;
-      })
-      .join('&');
-
-    // Create path for route
-    const pathCoords = markers.map(m => `${m.lat},${m.lng}`).join('|');
-    const pathParam = markers.length > 1 
-      ? `&path=color:0x3B82F6FF|weight:3|${pathCoords}` 
-      : '';
-
-    return `https://maps.googleapis.com/maps/api/staticmap?size=600x400&maptype=roadmap&${markerParams}${pathParam}&key=`;
-  }, [markers, center]);
+  const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+    
+    if (markers.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      markers.forEach((marker: MarkerData) => {
+        bounds.extend({ lat: marker.lat, lng: marker.lng });
+      });
+      mapInstance.fitBounds(bounds);
+    }
+  }, [markers]);
 
   const openInGoogleMaps = () => {
     if (markers.length === 0) return;
@@ -95,7 +154,6 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
       const m = markers[0];
       window.open(`https://www.google.com/maps?q=${m.lat},${m.lng}`, '_blank');
     } else {
-      // Create directions URL with waypoints
       const origin = markers[0];
       const destination = markers[markers.length - 1];
       const waypoints = markers.slice(1, -1).map(m => `${m.lat},${m.lng}`).join('|');
@@ -108,6 +166,52 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
     }
   };
 
+  // Create custom marker icon with number
+  const createMarkerIcon = (dayNumber: number, activityIndex: number): google.maps.Symbol => {
+    const color = dayColors[(dayNumber - 1) % dayColors.length];
+    return {
+      path: google.maps.SymbolPath.CIRCLE,
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 2,
+      scale: 12,
+    };
+  };
+
+  // No API key
+  if (!apiKey) {
+    return (
+      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
+        <AlertCircle className="w-12 h-12 mb-4 text-warning" />
+        <p className="text-lg font-medium text-center text-foreground">Google Maps API key required</p>
+        <p className="text-sm text-center">Add VITE_GOOGLE_MAPS_API_KEY to enable the map</p>
+      </Card>
+    );
+  }
+
+  // Loading error
+  if (loadError) {
+    return (
+      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
+        <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
+        <p className="text-lg font-medium text-center">Failed to load Google Maps</p>
+        <p className="text-sm text-center">Please check your API key and try again</p>
+      </Card>
+    );
+  }
+
+  // Loading state
+  if (!isLoaded) {
+    return (
+      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
+        <Loader2 className="w-12 h-12 mb-4 animate-spin text-primary" />
+        <p className="text-lg font-medium text-center">Loading map...</p>
+      </Card>
+    );
+  }
+
+  // No markers
   if (markers.length === 0) {
     return (
       <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
@@ -120,34 +224,99 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
 
   return (
     <Card className="h-full min-h-[400px] overflow-hidden flex flex-col">
-      {/* Map Placeholder - In a real app, use Google Maps API or Mapbox */}
-      <div className="flex-1 bg-gradient-to-br from-blue-100 to-teal-100 dark:from-blue-900/20 dark:to-teal-900/20 relative">
-        {/* Simulated map with markers list */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center p-6">
-            <MapPin className="w-16 h-16 mx-auto mb-4 text-blue-500" />
-            <p className="text-lg font-medium text-foreground mb-2">
-              {markers.length} Location{markers.length !== 1 ? 's' : ''} Mapped
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Click below to view the full route in Google Maps
-            </p>
-            <Button onClick={openInGoogleMaps} className="bg-gradient-to-r from-blue-600 to-teal-500">
-              <Navigation className="w-4 h-4 mr-2" />
-              Open in Google Maps
-            </Button>
-          </div>
+      {/* Map */}
+      <div className="flex-1 relative">
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={13}
+          options={mapOptions}
+          onLoad={onMapLoad}
+        >
+          {/* Polylines for routes */}
+          {polylinePaths.map((polyline, idx) => (
+            <Polyline
+              key={idx}
+              path={polyline.path}
+              options={{
+                strokeColor: polyline.color,
+                strokeOpacity: 0.8,
+                strokeWeight: 3,
+              }}
+            />
+          ))}
+
+          {/* Markers */}
+          {markers.map((marker, idx) => (
+            <Marker
+              key={`${marker.day}-${marker.index}`}
+              position={{ lat: marker.lat, lng: marker.lng }}
+              icon={createMarkerIcon(marker.day, marker.index)}
+              label={{
+                text: String(marker.index),
+                color: '#ffffff',
+                fontWeight: 'bold',
+                fontSize: '11px',
+              }}
+              onClick={() => setSelectedMarker(marker)}
+            />
+          ))}
+
+          {/* Info Window */}
+          {selectedMarker && (
+            <InfoWindow
+              position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
+              onCloseClick={() => setSelectedMarker(null)}
+            >
+              <div className="p-2 min-w-[150px]">
+                <p className="font-semibold" style={{ color: '#111827' }}>{selectedMarker.name}</p>
+                <p className="text-sm" style={{ color: '#4B5563' }}>
+                  Day {selectedMarker.day} • {selectedMarker.time}
+                </p>
+                <button
+                  className="mt-2 text-sm hover:underline"
+                  style={{ color: '#2563EB' }}
+                  onClick={() => {
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${selectedMarker.lat},${selectedMarker.lng}`,
+                      '_blank'
+                    );
+                  }}
+                >
+                  Get Directions →
+                </button>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+
+        {/* Open in Google Maps button */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <Button 
+            onClick={openInGoogleMaps} 
+            size="sm"
+            variant="secondary"
+            className="shadow-lg"
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            Full Route
+          </Button>
         </div>
       </div>
 
       {/* Markers Legend */}
       <div className="p-4 border-t bg-card">
         <h4 className="text-sm font-semibold mb-3">Locations</h4>
-        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+        <div className="space-y-2 max-h-[150px] overflow-y-auto">
           {markers.map((marker, i) => (
-            <div 
-              key={i} 
-              className="flex items-center gap-2 text-sm"
+            <button
+              key={i}
+              className="flex items-center gap-2 text-sm w-full text-left hover:bg-muted/50 p-1 rounded transition-colors"
+              onClick={() => {
+                setSelectedMarker(marker);
+                map?.panTo({ lat: marker.lat, lng: marker.lng });
+                map?.setZoom(15);
+              }}
             >
               <span 
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -155,13 +324,13 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
               >
                 {marker.index}
               </span>
-              <span className="truncate text-muted-foreground">
+              <span className="truncate text-foreground">
                 {marker.name}
               </span>
-              <span className="text-xs text-muted-foreground flex-shrink-0">
+              <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">
                 Day {marker.day}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
