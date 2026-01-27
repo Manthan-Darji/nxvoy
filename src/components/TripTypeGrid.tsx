@@ -49,7 +49,7 @@ const TripTypeGrid = () => {
             Trip Types
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Every Journey, <span className="gradient-text">Perfectly Planned</span>
+            What's Your <span className="gradient-text">Travel Vibe?</span>
           </h2>
           <p className="text-muted-foreground text-lg">
             Whether you're seeking adventure or relaxation, Shasa tailors every trip to your style.

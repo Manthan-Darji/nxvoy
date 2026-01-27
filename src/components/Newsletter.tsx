@@ -39,8 +39,7 @@ const Newsletter = () => {
             Shasa's Travel Newsletter
           </h2>
           <p className="text-white/80 text-lg mb-8">
-            Get exclusive travel tips, destination guides, and early access to new features. 
-            Join 25,000+ travelers who never miss an update.
+            Get travel hacks and deals
           </p>
 
           {/* Form */}
