@@ -179,7 +179,7 @@ const Itinerary = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <ItineraryHeader trip={trip} totalCost={totalCost} />
+        <ItineraryHeader trip={trip} totalCost={totalCost} days={days} />
 
         <div className="flex-1 flex flex-col px-3 py-3">
           <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
@@ -214,7 +214,7 @@ const Itinerary = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <ItineraryHeader trip={trip} totalCost={totalCost} />
+      <ItineraryHeader trip={trip} totalCost={totalCost} days={days} />
 
       <div className="container max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-5 gap-8">
