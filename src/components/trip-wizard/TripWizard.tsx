@@ -30,19 +30,108 @@ interface TripWizardProps {
   onClose: () => void;
 }
 
-const MOCK_DESTINATIONS = [
-  'Paris, France',
+const POPULAR_DESTINATIONS = [
+  // Asia
   'Tokyo, Japan',
-  'New York, USA',
+  'Kyoto, Japan',
   'Bali, Indonesia',
-  'London, UK',
-  'Dubai, UAE',
-  'Rome, Italy',
-  'Barcelona, Spain',
-  'Goa, India',
-  'Maldives',
-  'Singapore',
   'Bangkok, Thailand',
+  'Phuket, Thailand',
+  'Singapore',
+  'Hong Kong',
+  'Seoul, South Korea',
+  'Vietnam - Ha Long Bay',
+  'Hanoi, Vietnam',
+  'Kuala Lumpur, Malaysia',
+  'Manila, Philippines',
+  'Boracay, Philippines',
+  
+  // India
+  'Goa, India',
+  'Jaipur, India',
+  'Kerala, India',
+  'Udaipur, India',
+  'Manali, India',
+  'Ladakh, India',
+  'Rishikesh, India',
+  'Andaman Islands, India',
+  'Varanasi, India',
+  'Mumbai, India',
+  'Delhi, India',
+  
+  // Middle East
+  'Dubai, UAE',
+  'Abu Dhabi, UAE',
+  'Maldives',
+  'Istanbul, Turkey',
+  'Cappadocia, Turkey',
+  'Petra, Jordan',
+  'Muscat, Oman',
+  
+  // Europe
+  'Paris, France',
+  'London, UK',
+  'Rome, Italy',
+  'Venice, Italy',
+  'Florence, Italy',
+  'Amalfi Coast, Italy',
+  'Barcelona, Spain',
+  'Madrid, Spain',
+  'Ibiza, Spain',
+  'Amsterdam, Netherlands',
+  'Santorini, Greece',
+  'Athens, Greece',
+  'Mykonos, Greece',
+  'Prague, Czech Republic',
+  'Vienna, Austria',
+  'Zurich, Switzerland',
+  'Interlaken, Switzerland',
+  'Berlin, Germany',
+  'Munich, Germany',
+  'Reykjavik, Iceland',
+  'Edinburgh, Scotland',
+  'Dublin, Ireland',
+  'Lisbon, Portugal',
+  'Budapest, Hungary',
+  'Copenhagen, Denmark',
+  'Stockholm, Sweden',
+  'Oslo, Norway',
+  'Fjords, Norway',
+  
+  // Americas
+  'New York, USA',
+  'Los Angeles, USA',
+  'San Francisco, USA',
+  'Miami, USA',
+  'Las Vegas, USA',
+  'Hawaii, USA',
+  'Grand Canyon, USA',
+  'Cancun, Mexico',
+  'Mexico City, Mexico',
+  'Rio de Janeiro, Brazil',
+  'Buenos Aires, Argentina',
+  'Machu Picchu, Peru',
+  'Cartagena, Colombia',
+  'Costa Rica',
+  'Havana, Cuba',
+  'Jamaica',
+  
+  // Africa & Oceania
+  'Cape Town, South Africa',
+  'Marrakech, Morocco',
+  'Cairo, Egypt',
+  'Victoria Falls, Zimbabwe',
+  'Serengeti, Tanzania',
+  'Zanzibar, Tanzania',
+  'Mauritius',
+  'Seychelles',
+  'Sydney, Australia',
+  'Melbourne, Australia',
+  'Great Barrier Reef, Australia',
+  'Queenstown, New Zealand',
+  'Auckland, New Zealand',
+  'Fiji',
+  'Bora Bora, French Polynesia',
 ];
 
 const PREFERENCE_OPTIONS = [
@@ -89,10 +178,10 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
   // Filter destinations based on input
   useEffect(() => {
     if (tripData.destination.length > 0) {
-      const filtered = MOCK_DESTINATIONS.filter(dest =>
+      const filtered = POPULAR_DESTINATIONS.filter(dest =>
         dest.toLowerCase().includes(tripData.destination.toLowerCase())
       );
-      setFilteredDestinations(filtered);
+      setFilteredDestinations(filtered.slice(0, 8)); // Show max 8 suggestions
       setShowSuggestions(filtered.length > 0);
     } else {
       setShowSuggestions(false);
