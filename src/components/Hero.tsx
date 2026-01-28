@@ -84,10 +84,6 @@ const Hero = () => {
             {/* Stats */}
             <div className="flex flex-wrap justify-center gap-8 md:gap-16 mt-16 animate-fade-up" style={{ animationDelay: "0.4s" }}>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-white font-mono">50K+</div>
-                <div className="text-muted-foreground text-sm">Happy Travelers</div>
-              </div>
-              <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-white font-mono">120+</div>
                 <div className="text-muted-foreground text-sm">Countries</div>
               </div>
