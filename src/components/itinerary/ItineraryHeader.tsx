@@ -1,10 +1,11 @@
 import { format, differenceInDays, addDays } from 'date-fns';
-import { MapPin, Calendar, DollarSign, Share2, Download, Printer, ArrowLeft, Check } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Share2, Download, Printer, ArrowLeft, Check, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
+import ActiveCollaborators from './ActiveCollaborators';
 
 interface Activity {
   title: string;
@@ -34,9 +35,10 @@ interface ItineraryHeaderProps {
   trip: Trip;
   totalCost: number;
   days?: DayData[];
+  onShareClick?: () => void;
 }
 
-const ItineraryHeader = ({ trip, totalCost, days = [] }: ItineraryHeaderProps) => {
+const ItineraryHeader = ({ trip, totalCost, days = [], onShareClick }: ItineraryHeaderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -282,43 +284,51 @@ const ItineraryHeader = ({ trip, totalCost, days = [] }: ItineraryHeaderProps) =
             )}
           </div>
 
-          {/* Action Buttons - Responsive grid on mobile */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto print:hidden">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
-              onClick={handleShare}
-            >
-              <Share2 className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
-              onClick={handleExportPDF}
-            >
-              <Download className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Export PDF</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
-              onClick={handlePrint}
-            >
-              <Printer className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Print</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white text-blue-600 hover:bg-white/90 min-h-[44px] text-xs sm:text-sm"
-            >
-              <Check className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Saved</span>
-            </Button>
+          {/* Action Buttons and Active Collaborators */}
+          <div className="flex flex-col gap-3">
+            {/* Active Collaborators */}
+            <ActiveCollaborators tripId={trip.id} />
+            
+            {/* Action Buttons - Responsive grid on mobile */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto print:hidden">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white text-blue-600 hover:bg-white/90 min-h-[44px] text-xs sm:text-sm col-span-2 sm:col-span-1"
+                onClick={onShareClick}
+              >
+                <Users className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Invite Buddies</span>
+                <span className="sm:hidden">Invite</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
+                onClick={handleShare}
+              >
+                <Share2 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
+                onClick={handleExportPDF}
+              >
+                <Download className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export PDF</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
+                onClick={handlePrint}
+              >
+                <Printer className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Print</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

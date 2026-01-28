@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,9 +14,13 @@ import ItineraryMap from '@/components/itinerary/ItineraryMap';
 import RouteOptimizationModal from '@/components/itinerary/RouteOptimizationModal';
 import BudgetDashboard from '@/components/itinerary/BudgetDashboard';
 import WeatherWidget from '@/components/itinerary/WeatherWidget';
+import ShareTripModal from '@/components/itinerary/ShareTripModal';
+import ActivityFeed from '@/components/itinerary/ActivityFeed';
 import { Activity } from '@/components/itinerary/ActivityCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRealtimeItinerary } from '@/hooks/useRealtimeItinerary';
 import { optimizeRoute } from '@/services/routeOptimizationService';
+import { acceptInvitation, logActivity } from '@/services/collaborationService';
 
 interface Trip {
   id: string;
@@ -49,6 +53,7 @@ interface DayData {
 
 const Itinerary = () => {
   const { tripId } = useParams<{ tripId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -60,7 +65,45 @@ const Itinerary = () => {
   const [showOptimizationModal, setShowOptimizationModal] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState<any>(null);
   const [optimizingDayNumber, setOptimizingDayNumber] = useState<number>(1);
+  const [showShareModal, setShowShareModal] = useState(false);
   const isMobile = useIsMobile();
+
+  // Real-time collaboration hook
+  const { logActivity: logActivityAction } = useRealtimeItinerary({
+    tripId: tripId || '',
+    userId: user?.id,
+    onItineraryChange: () => {
+      fetchTripData();
+    },
+  });
+
+  // Handle invite token from URL
+  useEffect(() => {
+    const inviteToken = searchParams.get('invite');
+    if (inviteToken && user) {
+      handleInviteAccept(inviteToken);
+    }
+  }, [searchParams, user]);
+
+  const handleInviteAccept = async (token: string) => {
+    if (!user) return;
+    
+    const result = await acceptInvitation(token, user.id);
+    if (result.success) {
+      toast({
+        title: 'Welcome to the trip! 🎉',
+        description: 'You now have access to this itinerary.',
+      });
+      // Remove invite token from URL
+      navigate(`/itinerary/${tripId}`, { replace: true });
+    } else {
+      toast({
+        title: 'Invalid invitation',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -411,7 +454,12 @@ const Itinerary = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <ItineraryHeader trip={trip} totalCost={totalCost} days={days} />
+        <ItineraryHeader 
+          trip={trip} 
+          totalCost={totalCost} 
+          days={days} 
+          onShareClick={() => setShowShareModal(true)}
+        />
 
         <div className="flex-1 flex flex-col px-3 py-3">
           <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
@@ -437,6 +485,9 @@ const Itinerary = () => {
                   totalBudget={trip.budget || 10000}
                   destination={trip.destination}
                 />
+              </div>
+              <div className="mt-4">
+                <ActivityFeed tripId={tripId!} />
               </div>
               <ItineraryTimeline
                 days={days}
@@ -472,6 +523,14 @@ const Itinerary = () => {
           result={optimizationResult}
           dayNumber={optimizingDayNumber}
         />
+
+        {/* Share Modal */}
+        <ShareTripModal
+          open={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          tripId={tripId!}
+          tripName={trip.destination}
+        />
       </div>
     );
   }
@@ -480,7 +539,12 @@ const Itinerary = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <ItineraryHeader trip={trip} totalCost={totalCost} days={days} />
+      <ItineraryHeader 
+        trip={trip} 
+        totalCost={totalCost} 
+        days={days}
+        onShareClick={() => setShowShareModal(true)}
+      />
 
       <div className="container max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-5 gap-8">
@@ -497,6 +561,7 @@ const Itinerary = () => {
               totalBudget={trip.budget || 10000}
               destination={trip.destination}
             />
+            <ActivityFeed tripId={tripId!} />
             <ItineraryTimeline
               days={days}
               startDate={trip.start_date}
@@ -510,7 +575,7 @@ const Itinerary = () => {
           </div>
 
           {/* Map Section - 40% */}
-          <div className="lg:col-span-2 lg:sticky lg:top-4 lg:self-start">
+          <div className="lg:col-span-2 lg:sticky lg:top-4 lg:self-start space-y-4">
             <ItineraryMap 
               days={days} 
               selectedDay={selectedDay || days[0]?.day}
@@ -529,6 +594,14 @@ const Itinerary = () => {
         isOptimizing={isOptimizing}
         result={optimizationResult}
         dayNumber={optimizingDayNumber}
+      />
+
+      {/* Share Modal */}
+      <ShareTripModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        tripId={tripId!}
+        tripName={trip.destination}
       />
     </div>
   );

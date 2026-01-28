@@ -138,6 +138,97 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_activity_log_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_collaborators: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          invite_token: string | null
+          invited_by: string | null
+          role: Database["public"]["Enums"]["collaborator_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+          trip_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          invite_token?: string | null
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["collaborator_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          trip_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          invite_token?: string | null
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["collaborator_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          trip_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_collaborators_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           budget: number | null
@@ -218,10 +309,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit_trip: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      get_collaborator_role: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: string
+      }
+      user_has_trip_access: {
+        Args: { p_trip_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      collaborator_role: "viewer" | "editor" | "co_planner"
+      invite_status: "pending" | "accepted" | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -348,6 +451,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      collaborator_role: ["viewer", "editor", "co_planner"],
+      invite_status: ["pending", "accepted", "declined"],
+    },
   },
 } as const
