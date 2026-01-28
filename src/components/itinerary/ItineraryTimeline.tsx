@@ -142,10 +142,10 @@ const ItineraryTimeline = ({
       {editable && (
         <Button
           variant="outline"
-          className="w-full border-dashed border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+          className="w-full border-dashed border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors min-h-[48px] text-base"
           onClick={handleAddClick}
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5 mr-2" />
           Add Activity to Day {selectedDay}
         </Button>
       )}

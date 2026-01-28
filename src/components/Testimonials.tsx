@@ -41,38 +41,38 @@ const Testimonials = () => {
           </p>
         </div>
 
-        {/* Testimonials Grid - 3 columns (Kanban-style layout) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Testimonials Grid - 1 col mobile, 3 col desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
           {testimonials.map((testimonial, index) => (
             <div
               key={testimonial.name}
-              className="relative glass-card p-8 transition-all duration-300 hover:-translate-y-2 hover:bg-black/50 hover:border-white/20"
+              className="relative glass-card p-5 sm:p-8 transition-all duration-300 hover:-translate-y-2 hover:bg-black/50 hover:border-white/20"
             >
               {/* Quote Icon */}
-              <div className="absolute top-6 right-6">
-                <Quote className="w-8 h-8 text-primary/30" />
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+                <Quote className="w-6 h-6 sm:w-8 sm:h-8 text-primary/30" />
               </div>
 
               {/* Rating */}
-              <div className="flex gap-1 mb-6">
+              <div className="flex gap-1 mb-4 sm:mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-400 text-amber-400" />
                 ))}
               </div>
 
               {/* Quote */}
-              <p className="text-white leading-relaxed mb-6 text-lg">
+              <p className="text-white leading-relaxed mb-4 sm:mb-6 text-base sm:text-lg">
                 "{testimonial.text}"
               </p>
 
               {/* Author */}
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold shadow-lg font-mono">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold shadow-lg font-mono text-sm sm:text-base">
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-white">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  <div className="font-semibold text-white text-sm sm:text-base">{testimonial.name}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
               </div>
             </div>
