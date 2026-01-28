@@ -1,11 +1,12 @@
 import { useMemo, useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
 import { MapPin, Navigation, AlertCircle, Loader2, RefreshCw, Clock, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Activity } from './ActivityCard';
 import { calculateTotalTravelTime } from '@/services/routeOptimizationService';
+import { useGoogleMaps } from '@/context/GoogleMapsContext';
 import { GOOGLE_MAPS_API_KEY } from '@/config/keys';
 
 interface DayData {
@@ -67,11 +68,7 @@ const ItineraryMap = ({ days, selectedDay, onOptimizeRoute, isOptimizing }: Itin
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  const apiKey = GOOGLE_MAPS_API_KEY;
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || '',
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
   // Get all locations with coordinates
   const markers = useMemo(() => {
@@ -189,7 +186,7 @@ const ItineraryMap = ({ days, selectedDay, onOptimizeRoute, isOptimizing }: Itin
   };
 
   // No API key
-  if (!apiKey) {
+  if (!GOOGLE_MAPS_API_KEY) {
     return (
       <Card className="h-full min-h-[350px] flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-6">
         <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 mb-4 text-warning" />
