@@ -11,8 +11,10 @@ import { ArrowLeft, Calendar } from 'lucide-react';
 import ItineraryHeader from '@/components/itinerary/ItineraryHeader';
 import ItineraryTimeline from '@/components/itinerary/ItineraryTimeline';
 import ItineraryMap from '@/components/itinerary/ItineraryMap';
+import RouteOptimizationModal from '@/components/itinerary/RouteOptimizationModal';
 import { Activity } from '@/components/itinerary/ActivityCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { optimizeRoute } from '@/services/routeOptimizationService';
 
 interface Trip {
   id: string;
@@ -52,6 +54,10 @@ const Itinerary = () => {
   const [itinerary, setItinerary] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<number | undefined>(undefined);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [showOptimizationModal, setShowOptimizationModal] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<any>(null);
+  const [optimizingDayNumber, setOptimizingDayNumber] = useState<number>(1);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -257,6 +263,97 @@ const Itinerary = () => {
     }
   }, [tripId, toast]);
 
+  // Handle route optimization
+  const handleOptimizeRoute = useCallback(async (dayNumber: number) => {
+    const dayData = days.find(d => d.day === dayNumber);
+    if (!dayData || dayData.activities.length < 2) {
+      toast({
+        title: 'Not enough activities',
+        description: 'Need at least 2 activities with locations to optimize.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setOptimizingDayNumber(dayNumber);
+    setShowOptimizationModal(true);
+    setIsOptimizing(true);
+    setOptimizationResult(null);
+
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const result = await optimizeRoute(dayData.activities, apiKey);
+      setOptimizationResult(result);
+    } catch (error) {
+      console.error('Route optimization failed:', error);
+      toast({
+        title: 'Optimization failed',
+        description: 'Could not optimize route. Please try again.',
+        variant: 'destructive',
+      });
+      setShowOptimizationModal(false);
+    } finally {
+      setIsOptimizing(false);
+    }
+  }, [days, toast]);
+
+  // Apply optimized route
+  const handleApplyOptimizedRoute = useCallback(async (optimizedActivities: Activity[]) => {
+    if (!tripId) return;
+
+    try {
+      // Update each activity's start_time to reflect new order
+      // We'll update the times sequentially based on the new order
+      const baseTime = optimizedActivities[0]?.startTime || '09:00';
+      let currentHour = parseInt(baseTime.split(':')[0]);
+      let currentMinute = parseInt(baseTime.split(':')[1] || '0');
+
+      for (let i = 0; i < optimizedActivities.length; i++) {
+        const activity = optimizedActivities[i];
+        if (!activity.id) continue;
+
+        // Calculate new start time based on position
+        const newStartTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+        
+        const { error } = await supabase
+          .from('itineraries')
+          .update({
+            start_time: newStartTime,
+          })
+          .eq('id', activity.id);
+
+        if (error) throw error;
+
+        // Increment time for next activity (assume 2 hours per activity as default)
+        currentHour += 2;
+        if (currentHour >= 24) currentHour = currentHour - 24;
+      }
+
+      // Refresh data
+      await fetchTripData();
+
+      toast({
+        title: '✅ Route optimized!',
+        description: `Saved ${optimizationResult?.timeSaved || 0} minutes of travel time`,
+      });
+
+      setShowOptimizationModal(false);
+      setOptimizationResult(null);
+    } catch (error) {
+      console.error('Failed to apply optimized route:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to apply optimized route. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [tripId, toast, optimizationResult]);
+
+  const handleCloseOptimizationModal = useCallback(() => {
+    setShowOptimizationModal(false);
+    setOptimizationResult(null);
+  }, []);
+
   // Loading State
   if (authLoading || isLoading) {
     return (
@@ -338,11 +435,26 @@ const Itinerary = () => {
 
             <TabsContent value="map" className="mt-0 flex-1">
               <div className="h-[calc(100vh-280px)] min-h-[400px]">
-                <ItineraryMap days={days} selectedDay={selectedDay} />
+                <ItineraryMap 
+                  days={days} 
+                  selectedDay={selectedDay || days[0]?.day}
+                  onOptimizeRoute={handleOptimizeRoute}
+                  isOptimizing={isOptimizing}
+                />
               </div>
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Route Optimization Modal */}
+        <RouteOptimizationModal
+          open={showOptimizationModal}
+          onClose={handleCloseOptimizationModal}
+          onApply={handleApplyOptimizedRoute}
+          isOptimizing={isOptimizing}
+          result={optimizationResult}
+          dayNumber={optimizingDayNumber}
+        />
       </div>
     );
   }
@@ -369,10 +481,25 @@ const Itinerary = () => {
 
           {/* Map Section - 40% */}
           <div className="lg:col-span-2 lg:sticky lg:top-4 lg:self-start">
-            <ItineraryMap days={days} selectedDay={selectedDay} />
+            <ItineraryMap 
+              days={days} 
+              selectedDay={selectedDay || days[0]?.day}
+              onOptimizeRoute={handleOptimizeRoute}
+              isOptimizing={isOptimizing}
+            />
           </div>
         </div>
       </div>
+
+      {/* Route Optimization Modal */}
+      <RouteOptimizationModal
+        open={showOptimizationModal}
+        onClose={handleCloseOptimizationModal}
+        onApply={handleApplyOptimizedRoute}
+        isOptimizing={isOptimizing}
+        result={optimizationResult}
+        dayNumber={optimizingDayNumber}
+      />
     </div>
   );
 };
