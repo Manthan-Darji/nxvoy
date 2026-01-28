@@ -134,6 +134,201 @@ const POPULAR_DESTINATIONS = [
   'Bora Bora, French Polynesia',
 ];
 
+const WORLD_CITIES = [
+  // India - Major Cities
+  'Mumbai, India',
+  'Delhi, India',
+  'Bangalore, India',
+  'Hyderabad, India',
+  'Chennai, India',
+  'Kolkata, India',
+  'Pune, India',
+  'Ahmedabad, India',
+  'Jaipur, India',
+  'Surat, India',
+  'Lucknow, India',
+  'Kanpur, India',
+  'Nagpur, India',
+  'Indore, India',
+  'Thane, India',
+  'Bhopal, India',
+  'Visakhapatnam, India',
+  'Patna, India',
+  'Vadodara, India',
+  'Ghaziabad, India',
+  'Ludhiana, India',
+  'Agra, India',
+  'Nashik, India',
+  'Faridabad, India',
+  'Meerut, India',
+  'Rajkot, India',
+  'Varanasi, India',
+  'Amritsar, India',
+  'Allahabad, India',
+  'Ranchi, India',
+  'Coimbatore, India',
+  'Jabalpur, India',
+  'Gwalior, India',
+  'Vijayawada, India',
+  'Jodhpur, India',
+  'Madurai, India',
+  'Raipur, India',
+  'Kota, India',
+  'Chandigarh, India',
+  'Guwahati, India',
+  'Thiruvananthapuram, India',
+  'Kochi, India',
+  'Mysore, India',
+  'Mangalore, India',
+  'Dehradun, India',
+  'Shimla, India',
+  
+  // Asia
+  'Tokyo, Japan',
+  'Osaka, Japan',
+  'Kyoto, Japan',
+  'Beijing, China',
+  'Shanghai, China',
+  'Guangzhou, China',
+  'Shenzhen, China',
+  'Hong Kong',
+  'Singapore',
+  'Bangkok, Thailand',
+  'Chiang Mai, Thailand',
+  'Seoul, South Korea',
+  'Busan, South Korea',
+  'Kuala Lumpur, Malaysia',
+  'Penang, Malaysia',
+  'Jakarta, Indonesia',
+  'Bali, Indonesia',
+  'Manila, Philippines',
+  'Cebu, Philippines',
+  'Hanoi, Vietnam',
+  'Ho Chi Minh City, Vietnam',
+  'Taipei, Taiwan',
+  'Colombo, Sri Lanka',
+  'Kathmandu, Nepal',
+  'Dhaka, Bangladesh',
+  'Karachi, Pakistan',
+  'Lahore, Pakistan',
+  'Islamabad, Pakistan',
+  
+  // Middle East
+  'Dubai, UAE',
+  'Abu Dhabi, UAE',
+  'Doha, Qatar',
+  'Riyadh, Saudi Arabia',
+  'Jeddah, Saudi Arabia',
+  'Kuwait City, Kuwait',
+  'Muscat, Oman',
+  'Manama, Bahrain',
+  'Tel Aviv, Israel',
+  'Jerusalem, Israel',
+  'Amman, Jordan',
+  'Beirut, Lebanon',
+  'Istanbul, Turkey',
+  'Ankara, Turkey',
+  'Tehran, Iran',
+  
+  // Europe
+  'London, UK',
+  'Manchester, UK',
+  'Birmingham, UK',
+  'Edinburgh, UK',
+  'Glasgow, UK',
+  'Paris, France',
+  'Lyon, France',
+  'Marseille, France',
+  'Nice, France',
+  'Berlin, Germany',
+  'Munich, Germany',
+  'Frankfurt, Germany',
+  'Hamburg, Germany',
+  'Rome, Italy',
+  'Milan, Italy',
+  'Venice, Italy',
+  'Florence, Italy',
+  'Naples, Italy',
+  'Madrid, Spain',
+  'Barcelona, Spain',
+  'Seville, Spain',
+  'Valencia, Spain',
+  'Amsterdam, Netherlands',
+  'Rotterdam, Netherlands',
+  'Brussels, Belgium',
+  'Vienna, Austria',
+  'Zurich, Switzerland',
+  'Geneva, Switzerland',
+  'Prague, Czech Republic',
+  'Warsaw, Poland',
+  'Krakow, Poland',
+  'Budapest, Hungary',
+  'Lisbon, Portugal',
+  'Porto, Portugal',
+  'Athens, Greece',
+  'Dublin, Ireland',
+  'Copenhagen, Denmark',
+  'Stockholm, Sweden',
+  'Oslo, Norway',
+  'Helsinki, Finland',
+  'Moscow, Russia',
+  'St. Petersburg, Russia',
+  
+  // Americas
+  'New York, USA',
+  'Los Angeles, USA',
+  'Chicago, USA',
+  'Houston, USA',
+  'Phoenix, USA',
+  'Philadelphia, USA',
+  'San Antonio, USA',
+  'San Diego, USA',
+  'Dallas, USA',
+  'San Francisco, USA',
+  'Seattle, USA',
+  'Denver, USA',
+  'Boston, USA',
+  'Miami, USA',
+  'Atlanta, USA',
+  'Las Vegas, USA',
+  'Toronto, Canada',
+  'Vancouver, Canada',
+  'Montreal, Canada',
+  'Calgary, Canada',
+  'Mexico City, Mexico',
+  'Guadalajara, Mexico',
+  'Cancun, Mexico',
+  'Sao Paulo, Brazil',
+  'Rio de Janeiro, Brazil',
+  'Buenos Aires, Argentina',
+  'Lima, Peru',
+  'Bogota, Colombia',
+  'Santiago, Chile',
+  
+  // Africa
+  'Cairo, Egypt',
+  'Alexandria, Egypt',
+  'Cape Town, South Africa',
+  'Johannesburg, South Africa',
+  'Durban, South Africa',
+  'Lagos, Nigeria',
+  'Nairobi, Kenya',
+  'Casablanca, Morocco',
+  'Marrakech, Morocco',
+  'Tunis, Tunisia',
+  'Addis Ababa, Ethiopia',
+  'Accra, Ghana',
+  
+  // Oceania
+  'Sydney, Australia',
+  'Melbourne, Australia',
+  'Brisbane, Australia',
+  'Perth, Australia',
+  'Auckland, New Zealand',
+  'Wellington, New Zealand',
+  'Christchurch, New Zealand',
+];
+
 const PREFERENCE_OPTIONS = [
   { id: 'relaxed', label: '😌 Relaxed', icon: '😌' },
   { id: 'adventure', label: '🏔️ Adventure', icon: '🏔️' },
@@ -163,6 +358,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
+  const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
+  const [filteredCities, setFilteredCities] = useState<string[]>([]);
   const [generatedTripId, setGeneratedTripId] = useState<string | null>(null);
   
   const [tripData, setTripData] = useState<TripData>({
@@ -187,6 +384,19 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
       setShowSuggestions(false);
     }
   }, [tripData.destination]);
+
+  // Filter origin cities based on input
+  useEffect(() => {
+    if (tripData.origin.length > 0) {
+      const filtered = WORLD_CITIES.filter(city =>
+        city.toLowerCase().includes(tripData.origin.toLowerCase())
+      );
+      setFilteredCities(filtered.slice(0, 8)); // Show max 8 suggestions
+      setShowOriginSuggestions(filtered.length > 0);
+    } else {
+      setShowOriginSuggestions(false);
+    }
+  }, [tripData.origin]);
 
   const updateTripData = (field: keyof TripData, value: any) => {
     setTripData(prev => ({ ...prev, [field]: value }));
@@ -290,6 +500,13 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
   const handleUseCurrentLocation = () => {
     // Mock current location
     updateTripData('origin', 'Rajkot, Gujarat, India');
+    setShowOriginSuggestions(false);
+  };
+
+  const handleSelectOrigin = (city: string) => {
+    updateTripData('origin', city);
+    setShowOriginSuggestions(false);
+    setTimeout(() => handleNext(), 300);
   };
 
   const togglePreference = (prefId: string) => {
@@ -510,12 +727,38 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 <div className="relative">
                   <Input
                     type="text"
-                    placeholder="Enter your city..."
+                    placeholder="Search for your city..."
                     value={tripData.origin}
                     onChange={(e) => updateTripData('origin', e.target.value)}
                     className="h-12 sm:h-14 text-base sm:text-lg bg-card/50 border-border/50 rounded-xl pl-10 sm:pl-12 focus:border-primary"
                   />
                   <Navigation className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  
+                  {/* Autocomplete suggestions for origin */}
+                  <AnimatePresence>
+                    {showOriginSuggestions && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/50 rounded-xl overflow-hidden shadow-xl z-10 max-h-64 overflow-y-auto"
+                      >
+                        {filteredCities.map((city, index) => (
+                          <motion.button
+                            key={city}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => handleSelectOrigin(city)}
+                            className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors flex items-center gap-3 border-b border-border/30 last:border-0"
+                          >
+                            <Navigation className="w-4 h-4 text-primary" />
+                            <span className="text-foreground">{city}</span>
+                          </motion.button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 
                 <Button
