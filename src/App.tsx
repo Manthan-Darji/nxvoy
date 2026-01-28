@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Itinerary from "./pages/Itinerary";
+import TripResult from "./pages/TripResult";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Itinerary />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/trip/:tripId"
+              element={
+                <ProtectedRoute>
+                  <TripResult />
                 </ProtectedRoute>
               }
             />

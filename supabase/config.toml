@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-itinerary]
 verify_jwt = false
+
+[functions.generate-trip-plan]
+verify_jwt = false

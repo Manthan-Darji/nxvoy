@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Check, MapPin, Calendar, Wallet, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -15,10 +16,25 @@ interface TripSuccessStateProps {
     duration: number;
     currencySymbol: string;
   };
+  tripId: string | null;
   onClose: () => void;
 }
 
-const TripSuccessState = ({ tripData, onClose }: TripSuccessStateProps) => {
+const TripSuccessState = ({ tripData, tripId, onClose }: TripSuccessStateProps) => {
+  const navigate = useNavigate();
+
+  const handleViewItinerary = () => {
+    if (tripId) {
+      onClose();
+      navigate(`/trip/${tripId}`);
+    }
+  };
+
+  const handleBackToDashboard = () => {
+    onClose();
+    navigate('/dashboard');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -46,10 +62,7 @@ const TripSuccessState = ({ tripData, onClose }: TripSuccessStateProps) => {
               repeat: Infinity,
               ease: "linear",
             }}
-            className="absolute w-3 h-3 rounded-full"
-            style={{
-              background: `hsl(${Math.random() * 60 + 200}, 70%, 60%)`,
-            }}
+            className="absolute w-3 h-3 rounded-full bg-primary/60"
           />
         ))}
       </div>
@@ -151,13 +164,13 @@ const TripSuccessState = ({ tripData, onClose }: TripSuccessStateProps) => {
         >
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleBackToDashboard}
             className="flex-1 h-12 border-border/50"
           >
             Back to Dashboard
           </Button>
           <Button
-            onClick={onClose}
+            onClick={handleViewItinerary}
             className="flex-1 h-12 btn-primary-gradient border-0 gap-2"
           >
             View Full Itinerary
@@ -172,7 +185,7 @@ const TripSuccessState = ({ tripData, onClose }: TripSuccessStateProps) => {
           transition={{ delay: 1 }}
           className="text-xs text-muted-foreground"
         >
-          ✨ This is a preview. Full itinerary generation coming soon!
+          ✨ Your itinerary includes transport, stays, food & activities!
         </motion.p>
       </motion.div>
     </motion.div>

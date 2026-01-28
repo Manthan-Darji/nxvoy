@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, Calendar, Wallet, Sparkles, ChevronLeft, X, Locate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { generateTripPlan } from '@/services/tripPlanService';
 import ProcessingState from './ProcessingState';
 import TripSuccessState from './TripSuccessState';
 
@@ -60,11 +65,16 @@ const CURRENCIES = [
 ];
 
 const TripWizard = ({ onClose }: TripWizardProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
+  const [generatedTripId, setGeneratedTripId] = useState<string | null>(null);
   
   const [tripData, setTripData] = useState<TripData>({
     destination: '',
@@ -93,17 +103,86 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     setTripData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleGenerateTrip = async () => {
+    if (!user) {
+      toast({
+        title: 'Please log in',
+        description: 'You need to be logged in to create trips.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Call the edge function to generate trip plan
+      const tripPlan = await generateTripPlan(
+        {
+          origin: tripData.origin,
+          destination: tripData.destination,
+          startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
+          endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
+          budget: parseFloat(tripData.budget),
+          currency: tripData.currency,
+          preferences: tripData.preferences,
+        },
+        session?.access_token
+      );
+
+      console.log('[TripWizard] Trip plan generated:', tripPlan.trip_title);
+
+      // Check budget status and show warning if over budget
+      if (tripPlan.budget_status === 'over_budget') {
+        toast({
+          title: 'Budget Warning ⚠️',
+          description: tripPlan.budget_message || 'The estimated cost exceeds your budget.',
+        });
+      }
+
+      // Save to database
+      const { data: savedTrip, error: saveError } = await supabase
+        .from('trips')
+        .insert({
+          user_id: user.id,
+          destination: tripData.destination,
+          start_date: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : null,
+          end_date: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : null,
+          budget: parseFloat(tripData.budget),
+          notes: JSON.stringify(tripPlan), // Store the full trip plan as JSON
+          status: 'planned',
+        })
+        .select()
+        .single();
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      console.log('[TripWizard] Trip saved with ID:', savedTrip.id);
+      setGeneratedTripId(savedTrip.id);
+      setIsSuccess(true);
+
+    } catch (error) {
+      console.error('[TripWizard] Error generating trip:', error);
+      toast({
+        title: 'Failed to generate trip',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // Start processing
-      setIsProcessing(true);
-      // Simulate AI processing
-      setTimeout(() => {
-        setIsProcessing(false);
-        setIsSuccess(true);
-      }, 6000);
+      // Start the actual trip generation
+      handleGenerateTrip();
     }
   };
 
@@ -172,7 +251,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
           ...tripData,
           duration: getTripDuration(),
           currencySymbol: getCurrencySymbol(),
-        }} 
+        }}
+        tripId={generatedTripId}
         onClose={onClose} 
       />
     );
