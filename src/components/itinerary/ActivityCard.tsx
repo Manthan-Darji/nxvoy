@@ -131,15 +131,15 @@ const ActivityCard = ({ activity, index, isLast, onEdit, onDelete }: ActivityCar
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.1 }}
         >
-          <Card className="p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500 relative group">
-            {/* Edit/Delete buttons */}
+          <Card className="p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500 relative group touch-manipulation">
+            {/* Edit/Delete buttons - Always visible on mobile, hover on desktop */}
             {(onEdit || onDelete) && (
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 {onEdit && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     onClick={() => onEdit(activity)}
                   >
                     <Pencil className="w-4 h-4" />
@@ -149,7 +149,7 @@ const ActivityCard = ({ activity, index, isLast, onEdit, onDelete }: ActivityCar
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+                    className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="w-4 h-4" />

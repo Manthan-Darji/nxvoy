@@ -272,10 +272,10 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
       className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 md:p-6 border-b border-border/50">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-4 md:p-6 border-b border-border/50 safe-area-top">
+        <div className="flex items-center gap-2 sm:gap-3">
           {currentStep > 0 && (
-            <Button variant="ghost" size="icon" onClick={handleBack} className="text-muted-foreground">
+            <Button variant="ghost" size="icon" onClick={handleBack} className="text-muted-foreground min-w-[44px] min-h-[44px]">
               <ChevronLeft className="w-5 h-5" />
             </Button>
           )}
@@ -283,19 +283,19 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
-            <span className="font-semibold text-foreground">Shasa</span>
+            <span className="font-semibold text-foreground hidden sm:inline">Shasa</span>
           </div>
         </div>
         
         {/* Progress dots */}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           {[0, 1, 2, 3, 4].map((step) => (
             <div
               key={step}
               className={cn(
                 "w-2 h-2 rounded-full transition-all duration-300",
                 step === currentStep
-                  ? "w-6 bg-primary"
+                  ? "w-4 sm:w-6 bg-primary"
                   : step < currentStep
                   ? "bg-primary/60"
                   : "bg-muted"
@@ -304,13 +304,13 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
           ))}
         </div>
 
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground">
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground min-w-[44px] min-h-[44px]">
           <X className="w-5 h-5" />
         </Button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 overflow-y-auto pb-safe-area-bottom">
         <AnimatePresence mode="wait">
           {/* Step 0: Destination */}
           {currentStep === 0 && (
@@ -346,9 +346,9 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                   placeholder="Search for a city or place..."
                   value={tripData.destination}
                   onChange={(e) => updateTripData('destination', e.target.value)}
-                  className="h-14 text-lg bg-card/50 border-border/50 rounded-xl pl-12 focus:border-primary"
+                  className="h-12 sm:h-14 text-base sm:text-lg bg-card/50 border-border/50 rounded-xl pl-10 sm:pl-12 focus:border-primary"
                 />
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <MapPin className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 
                 {/* Autocomplete suggestions */}
                 <AnimatePresence>
@@ -377,11 +377,11 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </AnimatePresence>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
                   disabled={!isStepValid()}
-                  className="btn-primary-gradient border-0 px-8 h-12"
+                  className="btn-primary-gradient border-0 px-8 h-12 min-h-[48px] w-full sm:w-auto"
                 >
                   Continue
                 </Button>
@@ -424,26 +424,26 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                     placeholder="Enter your city..."
                     value={tripData.origin}
                     onChange={(e) => updateTripData('origin', e.target.value)}
-                    className="h-14 text-lg bg-card/50 border-border/50 rounded-xl pl-12 focus:border-primary"
+                    className="h-12 sm:h-14 text-base sm:text-lg bg-card/50 border-border/50 rounded-xl pl-10 sm:pl-12 focus:border-primary"
                   />
-                  <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Navigation className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 </div>
                 
                 <Button
                   variant="ghost"
                   onClick={handleUseCurrentLocation}
-                  className="w-full h-12 text-primary hover:bg-primary/10 gap-2"
+                  className="w-full h-12 text-primary hover:bg-primary/10 gap-2 min-h-[48px]"
                 >
                   <Locate className="w-4 h-4" />
                   Use my current location
                 </Button>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
                   disabled={!isStepValid()}
-                  className="btn-primary-gradient border-0 px-8 h-12"
+                  className="btn-primary-gradient border-0 px-8 h-12 min-h-[48px] w-full sm:w-auto"
                 >
                   Continue
                 </Button>
@@ -479,7 +479,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Start Date */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">Start Date</label>
@@ -488,7 +488,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-14 justify-start text-left font-normal bg-card/50 border-border/50 rounded-xl",
+                          "w-full h-12 sm:h-14 justify-start text-left font-normal bg-card/50 border-border/50 rounded-xl min-h-[48px]",
                           !tripData.startDate && "text-muted-foreground"
                         )}
                       >
@@ -496,7 +496,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                         {tripData.startDate ? format(tripData.startDate, "PPP") : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <PopoverContent className="w-auto p-0 bg-card border-border z-[100]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={tripData.startDate}
@@ -517,7 +517,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-14 justify-start text-left font-normal bg-card/50 border-border/50 rounded-xl",
+                          "w-full h-12 sm:h-14 justify-start text-left font-normal bg-card/50 border-border/50 rounded-xl min-h-[48px]",
                           !tripData.endDate && "text-muted-foreground"
                         )}
                       >
@@ -525,7 +525,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                         {tripData.endDate ? format(tripData.endDate, "PPP") : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <PopoverContent className="w-auto p-0 bg-card border-border z-[100]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={tripData.endDate}
@@ -554,11 +554,11 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </motion.div>
               )}
 
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
                   disabled={!isStepValid()}
-                  className="btn-primary-gradient border-0 px-8 h-12"
+                  className="btn-primary-gradient border-0 px-8 h-12 min-h-[48px] w-full sm:w-auto"
                 >
                   Continue
                 </Button>
@@ -594,17 +594,17 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Select
                   value={tripData.currency}
                   onValueChange={(value) => updateTripData('currency', value)}
                 >
-                  <SelectTrigger className="w-28 h-14 bg-card/50 border-border/50 rounded-xl">
+                  <SelectTrigger className="w-full sm:w-28 h-12 sm:h-14 bg-card/50 border-border/50 rounded-xl min-h-[48px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-card border-border z-[100]">
                     {CURRENCIES.map((curr) => (
-                      <SelectItem key={curr.code} value={curr.code}>
+                      <SelectItem key={curr.code} value={curr.code} className="min-h-[44px]">
                         {curr.symbol} {curr.code}
                       </SelectItem>
                     ))}
@@ -617,7 +617,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                     placeholder="Enter amount..."
                     value={tripData.budget}
                     onChange={(e) => updateTripData('budget', e.target.value)}
-                    className="h-14 text-lg bg-card/50 border-border/50 rounded-xl pl-10 focus:border-primary font-mono"
+                    className="h-12 sm:h-14 text-base sm:text-lg bg-card/50 border-border/50 rounded-xl pl-10 focus:border-primary font-mono min-h-[48px]"
                   />
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">
                     {getCurrencySymbol()}
@@ -652,11 +652,11 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </motion.div>
               )}
 
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
                   disabled={!isStepValid()}
-                  className="btn-primary-gradient border-0 px-8 h-12"
+                  className="btn-primary-gradient border-0 px-8 h-12 min-h-[48px] w-full sm:w-auto"
                 >
                   Continue
                 </Button>
@@ -692,7 +692,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 {PREFERENCE_OPTIONS.map((pref, index) => (
                   <motion.button
                     key={pref.id}
@@ -701,7 +701,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                     transition={{ delay: index * 0.05 }}
                     onClick={() => togglePreference(pref.id)}
                     className={cn(
-                      "px-5 py-3 rounded-full text-sm font-medium transition-all duration-200 border",
+                      "px-4 sm:px-5 py-2.5 sm:py-3 rounded-full text-sm font-medium transition-all duration-200 border min-h-[44px] touch-manipulation",
                       tripData.preferences.includes(pref.id)
                         ? "bg-primary/20 border-primary text-primary"
                         : "bg-card/50 border-border/50 text-muted-foreground hover:border-primary/50 hover:text-foreground"
@@ -745,10 +745,10 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
                 </div>
               </motion.div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
-                  className="btn-primary-gradient border-0 px-8 h-12 gap-2"
+                  className="btn-primary-gradient border-0 px-8 h-12 gap-2 min-h-[48px] w-full sm:w-auto"
                 >
                   <Sparkles className="w-4 h-4" />
                   Let Shasa Plan My Trip

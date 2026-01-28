@@ -67,75 +67,80 @@ const ActivityEditModal = ({ isOpen, onClose, activity, onSave, mode }: Activity
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto w-[calc(100%-2rem)] mx-auto rounded-xl">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
             {mode === 'edit' ? 'Edit Activity' : 'Add New Activity'}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Time */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
+              <Label htmlFor="startTime" className="text-sm">Start Time</Label>
               <Input
                 id="startTime"
                 type="time"
                 value={formData.startTime}
                 onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                 required
+                className="min-h-[44px]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endTime">End Time</Label>
+              <Label htmlFor="endTime" className="text-sm">End Time</Label>
               <Input
                 id="endTime"
                 type="time"
                 value={formData.endTime}
                 onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                 required
+                className="min-h-[44px]"
               />
             </div>
           </div>
 
           {/* Activity Name */}
           <div className="space-y-2">
-            <Label htmlFor="title">Activity Name</Label>
+            <Label htmlFor="title" className="text-sm">Activity Name</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g., Visit Eiffel Tower"
               required
+              className="min-h-[44px]"
             />
           </div>
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location">Location Address</Label>
+            <Label htmlFor="location" className="text-sm">Location Address</Label>
             <Input
               id="location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="e.g., Champ de Mars, Paris"
+              className="min-h-[44px]"
             />
           </div>
 
           {/* Duration and Cost */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Label htmlFor="duration" className="text-sm">Duration (min)</Label>
               <Input
                 id="duration"
                 type="number"
                 min="0"
                 value={formData.duration || 0}
                 onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
+                className="min-h-[44px]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cost">Estimated Cost ($)</Label>
+              <Label htmlFor="cost" className="text-sm">Cost ($)</Label>
               <Input
                 id="cost"
                 type="number"
@@ -143,23 +148,24 @@ const ActivityEditModal = ({ isOpen, onClose, activity, onSave, mode }: Activity
                 step="0.01"
                 value={formData.estimatedCost}
                 onChange={(e) => setFormData({ ...formData, estimatedCost: parseFloat(e.target.value) || 0 })}
+                className="min-h-[44px]"
               />
             </div>
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category" className="text-sm">Category</Label>
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="min-h-[44px]">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover z-[100]">
                 {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
+                  <SelectItem key={cat.value} value={cat.value} className="min-h-[44px]">
                     {cat.label}
                   </SelectItem>
                 ))}
@@ -169,21 +175,22 @@ const ActivityEditModal = ({ isOpen, onClose, activity, onSave, mode }: Activity
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Add details about this activity..."
               rows={3}
+              className="min-h-[80px]"
             />
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} className="min-h-[44px] w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600">
+            <Button type="submit" className="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 min-h-[44px] w-full sm:w-auto">
               {mode === 'edit' ? 'Save Changes' : 'Add Activity'}
             </Button>
           </DialogFooter>

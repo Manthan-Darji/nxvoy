@@ -282,42 +282,42 @@ const ItineraryHeader = ({ trip, totalCost, days = [] }: ItineraryHeaderProps) =
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 print:hidden">
+          {/* Action Buttons - Responsive grid on mobile */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto print:hidden">
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
               onClick={handleShare}
             >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
+              <Share2 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Share</span>
             </Button>
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
               onClick={handleExportPDF}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export PDF</span>
             </Button>
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 min-h-[44px] text-xs sm:text-sm"
               onClick={handlePrint}
             >
-              <Printer className="w-4 h-4 mr-2" />
-              Print
+              <Printer className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
             <Button
               variant="secondary"
               size="sm"
-              className="bg-white text-blue-600 hover:bg-white/90"
+              className="bg-white text-blue-600 hover:bg-white/90 min-h-[44px] text-xs sm:text-sm"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Saved
+              <Check className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Saved</span>
             </Button>
           </div>
         </div>
