@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
-import { Calendar, DollarSign } from 'lucide-react';
+import { Calendar, DollarSign, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import DayTabs from './DayTabs';
 import ActivityCard, { Activity } from './ActivityCard';
+import ActivityEditModal from './ActivityEditModal';
 
 interface DayData {
   day: number;
@@ -14,11 +16,27 @@ interface ItineraryTimelineProps {
   days: DayData[];
   startDate: string | null;
   onActivitySelect?: (activity: Activity, dayNumber: number) => void;
+  onActivityUpdate?: (dayNumber: number, activityIndex: number, updatedActivity: Activity) => void;
+  onActivityDelete?: (dayNumber: number, activityIndex: number) => void;
+  onActivityAdd?: (dayNumber: number, newActivity: Activity) => void;
+  editable?: boolean;
 }
 
-const ItineraryTimeline = ({ days, startDate, onActivitySelect }: ItineraryTimelineProps) => {
+const ItineraryTimeline = ({ 
+  days, 
+  startDate, 
+  onActivitySelect,
+  onActivityUpdate,
+  onActivityDelete,
+  onActivityAdd,
+  editable = true
+}: ItineraryTimelineProps) => {
   const dayNumbers = days.map(d => d.day);
   const [selectedDay, setSelectedDay] = useState(dayNumbers[0] || 1);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number>(-1);
+  const [modalMode, setModalMode] = useState<'edit' | 'add'>('edit');
 
   const dailyCosts = useMemo(() => {
     const costs: Record<number, number> = {};
@@ -37,6 +55,35 @@ const ItineraryTimeline = ({ days, startDate, onActivitySelect }: ItineraryTimel
     (sum, a) => sum + (a.estimatedCost || 0), 
     0
   ) || 0;
+
+  const handleEditClick = (activity: Activity, index: number) => {
+    setEditingActivity(activity);
+    setEditingIndex(index);
+    setModalMode('edit');
+    setEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (activity: Activity, index: number) => {
+    onActivityDelete?.(selectedDay, index);
+  };
+
+  const handleAddClick = () => {
+    setEditingActivity(null);
+    setEditingIndex(-1);
+    setModalMode('add');
+    setEditModalOpen(true);
+  };
+
+  const handleSaveActivity = (updatedActivity: Activity) => {
+    if (modalMode === 'edit' && editingIndex >= 0) {
+      onActivityUpdate?.(selectedDay, editingIndex, updatedActivity);
+    } else if (modalMode === 'add') {
+      onActivityAdd?.(selectedDay, updatedActivity);
+    }
+    setEditModalOpen(false);
+    setEditingActivity(null);
+    setEditingIndex(-1);
+  };
 
   if (days.length === 0) {
     return (
@@ -85,9 +132,36 @@ const ItineraryTimeline = ({ days, startDate, onActivitySelect }: ItineraryTimel
             activity={activity}
             index={index}
             isLast={index === currentDayData.activities.length - 1}
+            onEdit={editable ? (a) => handleEditClick(a, index) : undefined}
+            onDelete={editable ? (a) => handleDeleteClick(a, index) : undefined}
           />
         ))}
       </div>
+
+      {/* Add Activity Button */}
+      {editable && (
+        <Button
+          variant="outline"
+          className="w-full border-dashed border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+          onClick={handleAddClick}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Activity to Day {selectedDay}
+        </Button>
+      )}
+
+      {/* Edit Modal */}
+      <ActivityEditModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingActivity(null);
+          setEditingIndex(-1);
+        }}
+        activity={editingActivity}
+        onSave={handleSaveActivity}
+        mode={modalMode}
+      />
     </div>
   );
 };
