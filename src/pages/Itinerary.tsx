@@ -13,6 +13,7 @@ import ItineraryTimeline from '@/components/itinerary/ItineraryTimeline';
 import ItineraryMap from '@/components/itinerary/ItineraryMap';
 import RouteOptimizationModal from '@/components/itinerary/RouteOptimizationModal';
 import BudgetDashboard from '@/components/itinerary/BudgetDashboard';
+import WeatherWidget from '@/components/itinerary/WeatherWidget';
 import { Activity } from '@/components/itinerary/ActivityCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { optimizeRoute } from '@/services/routeOptimizationService';
@@ -424,11 +425,19 @@ const Itinerary = () => {
             </TabsList>
 
             <TabsContent value="timeline" className="mt-0 flex-1 overflow-auto">
-              <BudgetDashboard
-                days={days}
-                totalBudget={trip.budget || 10000}
+              <WeatherWidget
                 destination={trip.destination}
+                startDate={trip.start_date}
+                tripDays={days.length}
+                selectedDay={selectedDay || days[0]?.day}
               />
+              <div className="mt-4">
+                <BudgetDashboard
+                  days={days}
+                  totalBudget={trip.budget || 10000}
+                  destination={trip.destination}
+                />
+              </div>
               <ItineraryTimeline
                 days={days}
                 startDate={trip.start_date}
@@ -476,7 +485,13 @@ const Itinerary = () => {
       <div className="container max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Timeline Section - 60% */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
+            <WeatherWidget
+              destination={trip.destination}
+              startDate={trip.start_date}
+              tripDays={days.length}
+              selectedDay={selectedDay || days[0]?.day}
+            />
             <BudgetDashboard
               days={days}
               totalBudget={trip.budget || 10000}
