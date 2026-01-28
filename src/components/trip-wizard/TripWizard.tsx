@@ -451,7 +451,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
           end_date: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : null,
           budget: parseFloat(tripData.budget),
           notes: JSON.stringify(tripPlan), // Store the full trip plan as JSON
-          status: 'planned',
+          status: 'planning',
         })
         .select()
         .single();
