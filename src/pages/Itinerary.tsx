@@ -1,12 +1,13 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Map } from 'lucide-react';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import ItineraryHeader from '@/components/itinerary/ItineraryHeader';
 import ItineraryTimeline from '@/components/itinerary/ItineraryTimeline';
 import ItineraryMap from '@/components/itinerary/ItineraryMap';
@@ -46,6 +47,7 @@ const Itinerary = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [itinerary, setItinerary] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,7 +99,7 @@ const Itinerary = () => {
     }
   };
 
-  // Transform itinerary items to DayData format
+  // Transform itinerary items to DayData format with IDs
   const days: DayData[] = useMemo(() => {
     const grouped = itinerary.reduce((acc, item) => {
       const day = item.day_number;
@@ -109,6 +111,7 @@ const Itinerary = () => {
     return Object.entries(grouped).map(([day, items]) => ({
       day: parseInt(day),
       activities: items.map(item => ({
+        id: item.id,
         title: item.title,
         description: item.description || '',
         startTime: item.start_time || '09:00',
@@ -123,6 +126,136 @@ const Itinerary = () => {
   }, [itinerary]);
 
   const totalCost = itinerary.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
+
+  // Handle activity update
+  const handleActivityUpdate = useCallback(async (dayNumber: number, activityIndex: number, updatedActivity: Activity) => {
+    const dayData = days.find(d => d.day === dayNumber);
+    if (!dayData) return;
+
+    const originalActivity = dayData.activities[activityIndex];
+    const activityId = originalActivity.id;
+
+    if (!activityId) {
+      toast({
+        title: 'Error',
+        description: 'Activity ID not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('itineraries')
+        .update({
+          title: updatedActivity.title,
+          description: updatedActivity.description,
+          start_time: updatedActivity.startTime,
+          end_time: updatedActivity.endTime,
+          location: updatedActivity.location,
+          estimated_cost: updatedActivity.estimatedCost,
+          category: updatedActivity.category,
+        })
+        .eq('id', activityId);
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchTripData();
+
+      toast({
+        title: 'Activity updated! ✅',
+        description: 'Your changes have been saved.',
+      });
+    } catch (error) {
+      console.error('Failed to update activity:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update activity. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [days, toast]);
+
+  // Handle activity delete
+  const handleActivityDelete = useCallback(async (dayNumber: number, activityIndex: number) => {
+    const dayData = days.find(d => d.day === dayNumber);
+    if (!dayData) return;
+
+    const activity = dayData.activities[activityIndex];
+    const activityId = activity.id;
+
+    if (!activityId) {
+      toast({
+        title: 'Error',
+        description: 'Activity ID not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('itineraries')
+        .delete()
+        .eq('id', activityId);
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchTripData();
+
+      toast({
+        title: 'Activity deleted',
+        description: 'The activity has been removed from your itinerary.',
+      });
+    } catch (error) {
+      console.error('Failed to delete activity:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete activity. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [days, toast]);
+
+  // Handle activity add
+  const handleActivityAdd = useCallback(async (dayNumber: number, newActivity: Activity) => {
+    if (!tripId) return;
+
+    try {
+      const { error } = await supabase
+        .from('itineraries')
+        .insert({
+          trip_id: tripId,
+          day_number: dayNumber,
+          title: newActivity.title,
+          description: newActivity.description,
+          start_time: newActivity.startTime,
+          end_time: newActivity.endTime,
+          location: newActivity.location,
+          estimated_cost: newActivity.estimatedCost,
+          category: newActivity.category,
+        });
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchTripData();
+
+      toast({
+        title: 'Activity added! 🎉',
+        description: 'New activity has been added to your itinerary.',
+      });
+    } catch (error) {
+      console.error('Failed to add activity:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add activity. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [tripId, toast]);
 
   // Loading State
   if (authLoading || isLoading) {
@@ -196,6 +329,10 @@ const Itinerary = () => {
               <ItineraryTimeline
                 days={days}
                 startDate={trip.start_date}
+                onActivityUpdate={handleActivityUpdate}
+                onActivityDelete={handleActivityDelete}
+                onActivityAdd={handleActivityAdd}
+                editable={true}
               />
             </TabsContent>
 
@@ -223,6 +360,10 @@ const Itinerary = () => {
             <ItineraryTimeline
               days={days}
               startDate={trip.start_date}
+              onActivityUpdate={handleActivityUpdate}
+              onActivityDelete={handleActivityDelete}
+              onActivityAdd={handleActivityAdd}
+              editable={true}
             />
           </div>
 
