@@ -137,6 +137,7 @@ const ItineraryTimeline = ({
             activity={activity}
             index={index}
             isLast={index === currentDayData.activities.length - 1}
+            destination={destination}
             onEdit={editable ? (a) => handleEditClick(a, index) : undefined}
             onDelete={editable ? (a) => handleDeleteClick(a, index) : undefined}
           />

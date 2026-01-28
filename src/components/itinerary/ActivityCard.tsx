@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, Clock, DollarSign, ChevronDown, ChevronUp, 
   Navigation, Utensils, Camera, Mountain, Palette, 
-  Bed, Car, ShoppingBag, Moon, Ticket, Pencil, Trash2
+  Bed, Car, ShoppingBag, Moon, Ticket, Pencil, Trash2,
+  Aperture
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import PhotoRecommendationsPanel from './PhotoRecommendationsPanel';
 
 export interface Activity {
   id?: string;
@@ -39,9 +41,13 @@ interface ActivityCardProps {
   activity: Activity;
   index: number;
   isLast: boolean;
+  destination?: string;
   onEdit?: (activity: Activity) => void;
   onDelete?: (activity: Activity) => void;
 }
+
+// Categories that should show photo recommendations
+const PHOTO_CATEGORIES = ['attraction', 'adventure', 'culture', 'relaxation', 'activity'];
 
 const categoryConfig: Record<string, { icon: React.ReactNode; color: string }> = {
   food: { 
@@ -91,10 +97,12 @@ const formatTime = (time: string) => {
   return `${hour12}:${minutes} ${ampm}`;
 };
 
-const ActivityCard = ({ activity, index, isLast, onEdit, onDelete }: ActivityCardProps) => {
+const ActivityCard = ({ activity, index, isLast, destination, onEdit, onDelete }: ActivityCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPhotoPanel, setShowPhotoPanel] = useState(false);
   const config = categoryConfig[activity.category] || categoryConfig.attraction;
+  const showPhotoButton = PHOTO_CATEGORIES.includes(activity.category);
 
   const handleGetDirections = () => {
     if (activity.latitude && activity.longitude) {
@@ -250,6 +258,17 @@ const ActivityCard = ({ activity, index, isLast, onEdit, onDelete }: ActivityCar
                 <Navigation className="w-3 h-3 mr-1" />
                 Get Directions
               </Button>
+              {showPhotoButton && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPhotoPanel(true)}
+                  className="text-xs min-h-[44px] sm:min-h-0 justify-center bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30"
+                >
+                  <Aperture className="w-3 h-3 mr-1" />
+                  📷 Photo Spots
+                </Button>
+              )}
               {activity.tips && (
                 <Button
                   variant="ghost"
@@ -288,13 +307,23 @@ const ActivityCard = ({ activity, index, isLast, onEdit, onDelete }: ActivityCar
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Photo Recommendations Panel */}
+      <PhotoRecommendationsPanel
+        isOpen={showPhotoPanel}
+        onClose={() => setShowPhotoPanel(false)}
+        activityName={activity.title}
+        location={activity.location}
+        category={activity.category}
+        destination={destination}
+      />
     </>
   );
 };
