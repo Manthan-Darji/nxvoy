@@ -1,9 +1,11 @@
 import { useMemo, useState, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
-import { MapPin, Navigation, AlertCircle, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, AlertCircle, Loader2, RefreshCw, Clock, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Activity } from './ActivityCard';
+import { calculateTotalTravelTime } from '@/services/routeOptimizationService';
 
 interface DayData {
   day: number;
@@ -13,6 +15,8 @@ interface DayData {
 interface ItineraryMapProps {
   days: DayData[];
   selectedDay?: number;
+  onOptimizeRoute?: (dayNumber: number) => void;
+  isOptimizing?: boolean;
 }
 
 interface MarkerData {
@@ -58,7 +62,7 @@ const mapOptions: google.maps.MapOptions = {
   ],
 };
 
-const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
+const ItineraryMap = ({ days, selectedDay, onOptimizeRoute, isOptimizing }: ItineraryMapProps) => {
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
@@ -294,8 +298,8 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
           )}
         </GoogleMap>
 
-        {/* Open in Google Maps button */}
-        <div className="absolute bottom-3 left-3 z-10">
+        {/* Action buttons */}
+        <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap gap-2">
           <Button 
             onClick={openInGoogleMaps} 
             size="sm"
@@ -306,7 +310,38 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
             <span className="hidden sm:inline">Full Route</span>
             <span className="sm:hidden">Route</span>
           </Button>
+          
+          {onOptimizeRoute && selectedDay && (
+            <Button
+              onClick={() => onOptimizeRoute(selectedDay)}
+              disabled={isOptimizing}
+              size="sm"
+              className="shadow-lg text-xs sm:text-sm min-h-[40px] bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600"
+            >
+              {isOptimizing ? (
+                <Loader2 className="w-4 h-4 mr-1 sm:mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">Optimize Route</span>
+              <span className="sm:hidden">Optimize</span>
+            </Button>
+          )}
         </div>
+        
+        {/* Travel time indicator */}
+        {selectedDay && (() => {
+          const dayData = days.find(d => d.day === selectedDay);
+          const travelTime = dayData ? calculateTotalTravelTime(dayData.activities) : 0;
+          return travelTime > 0 ? (
+            <div className="absolute top-3 right-3 z-10">
+              <Badge variant="secondary" className="shadow-lg bg-background/90 backdrop-blur-sm">
+                <Clock className="w-3 h-3 mr-1" />
+                ~{travelTime} min travel
+              </Badge>
+            </div>
+          ) : null;
+        })()}
       </div>
 
       {/* Markers Legend - More compact on mobile */}
