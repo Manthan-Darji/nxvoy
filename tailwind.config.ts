@@ -73,6 +73,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       keyframes: {
         "accordion-down": {
@@ -99,6 +100,10 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px -5px hsl(239 84% 67% / 0.4)" },
+          "50%": { boxShadow: "0 0 40px -5px hsl(239 84% 67% / 0.6)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -107,6 +112,7 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "scale-in": "scale-in 0.4s ease-out forwards",
         "float": "float 3s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
     },
   },
