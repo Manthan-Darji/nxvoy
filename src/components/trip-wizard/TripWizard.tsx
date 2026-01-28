@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, Calendar, Wallet, Sparkles, ChevronLeft, X, Locate } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateTripPlan, HttpError } from '@/services/tripPlanService';
 import ProcessingState from './ProcessingState';
 import TripSuccessState from './TripSuccessState';
+import { searchIndianCities, INDIAN_CITIES } from '@/data/indianCities';
 
 interface TripData {
   destination: string;
@@ -30,108 +31,24 @@ interface TripWizardProps {
   onClose: () => void;
 }
 
-const POPULAR_DESTINATIONS = [
-  // Asia
-  'Tokyo, Japan',
-  'Kyoto, Japan',
-  'Bali, Indonesia',
-  'Bangkok, Thailand',
-  'Phuket, Thailand',
-  'Singapore',
-  'Hong Kong',
-  'Seoul, South Korea',
-  'Vietnam - Ha Long Bay',
-  'Hanoi, Vietnam',
-  'Kuala Lumpur, Malaysia',
-  'Manila, Philippines',
-  'Boracay, Philippines',
-  
-  // India
-  'Goa, India',
-  'Jaipur, India',
-  'Kerala, India',
-  'Udaipur, India',
-  'Manali, India',
-  'Ladakh, India',
-  'Rishikesh, India',
-  'Andaman Islands, India',
-  'Varanasi, India',
-  'Mumbai, India',
-  'Delhi, India',
-  
-  // Middle East
+// International destinations (kept for reference, but Indian cities use dedicated search)
+const INTERNATIONAL_DESTINATIONS = [
   'Dubai, UAE',
   'Abu Dhabi, UAE',
   'Maldives',
-  'Istanbul, Turkey',
-  'Cappadocia, Turkey',
-  'Petra, Jordan',
-  'Muscat, Oman',
-  
-  // Europe
+  'Singapore',
+  'Bangkok, Thailand',
+  'Phuket, Thailand',
+  'Bali, Indonesia',
+  'Kuala Lumpur, Malaysia',
+  'Tokyo, Japan',
   'Paris, France',
   'London, UK',
-  'Rome, Italy',
-  'Venice, Italy',
-  'Florence, Italy',
-  'Amalfi Coast, Italy',
-  'Barcelona, Spain',
-  'Madrid, Spain',
-  'Ibiza, Spain',
-  'Amsterdam, Netherlands',
-  'Santorini, Greece',
-  'Athens, Greece',
-  'Mykonos, Greece',
-  'Prague, Czech Republic',
-  'Vienna, Austria',
-  'Zurich, Switzerland',
-  'Interlaken, Switzerland',
-  'Berlin, Germany',
-  'Munich, Germany',
-  'Reykjavik, Iceland',
-  'Edinburgh, Scotland',
-  'Dublin, Ireland',
-  'Lisbon, Portugal',
-  'Budapest, Hungary',
-  'Copenhagen, Denmark',
-  'Stockholm, Sweden',
-  'Oslo, Norway',
-  'Fjords, Norway',
-  
-  // Americas
-  'New York, USA',
-  'Los Angeles, USA',
-  'San Francisco, USA',
-  'Miami, USA',
-  'Las Vegas, USA',
-  'Hawaii, USA',
-  'Grand Canyon, USA',
-  'Cancun, Mexico',
-  'Mexico City, Mexico',
-  'Rio de Janeiro, Brazil',
-  'Buenos Aires, Argentina',
-  'Machu Picchu, Peru',
-  'Cartagena, Colombia',
-  'Costa Rica',
-  'Havana, Cuba',
-  'Jamaica',
-  
-  // Africa & Oceania
-  'Cape Town, South Africa',
-  'Marrakech, Morocco',
-  'Cairo, Egypt',
-  'Victoria Falls, Zimbabwe',
-  'Serengeti, Tanzania',
-  'Zanzibar, Tanzania',
   'Mauritius',
   'Seychelles',
-  'Sydney, Australia',
-  'Melbourne, Australia',
-  'Great Barrier Reef, Australia',
-  'Queenstown, New Zealand',
-  'Auckland, New Zealand',
-  'Fiji',
-  'Bora Bora, French Polynesia',
+  'Sri Lanka',
+  'Nepal',
+  'Bhutan',
 ];
 
 const WORLD_CITIES = [
@@ -372,27 +289,40 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     preferences: [],
   });
 
-  // Filter destinations based on input
+  // Smart search for destinations - prioritizes Indian cities with prefix matching
   useEffect(() => {
     if (tripData.destination.length > 0) {
-      const filtered = POPULAR_DESTINATIONS.filter(dest =>
+      // Search Indian cities with smart matching
+      const indianResults = searchIndianCities(tripData.destination, 6);
+      
+      // Also search international destinations
+      const intlResults = INTERNATIONAL_DESTINATIONS.filter(dest =>
         dest.toLowerCase().includes(tripData.destination.toLowerCase())
-      );
-      setFilteredDestinations(filtered.slice(0, 8)); // Show max 8 suggestions
-      setShowSuggestions(filtered.length > 0);
+      ).slice(0, 2);
+      
+      // Combine results: Indian cities first, then international
+      const combined = [...indianResults, ...intlResults].slice(0, 8);
+      setFilteredDestinations(combined);
+      setShowSuggestions(combined.length > 0);
     } else {
       setShowSuggestions(false);
     }
   }, [tripData.destination]);
 
-  // Filter origin cities based on input
+  // Filter origin cities based on input - uses Indian cities primarily
   useEffect(() => {
     if (tripData.origin.length > 0) {
-      const filtered = WORLD_CITIES.filter(city =>
+      // Search Indian cities first (most users will start from India)
+      const indianResults = searchIndianCities(tripData.origin, 6);
+      
+      // Also include world cities
+      const worldResults = WORLD_CITIES.filter(city =>
         city.toLowerCase().includes(tripData.origin.toLowerCase())
-      );
-      setFilteredCities(filtered.slice(0, 8)); // Show max 8 suggestions
-      setShowOriginSuggestions(filtered.length > 0);
+      ).slice(0, 2);
+      
+      const combined = [...indianResults, ...worldResults].slice(0, 8);
+      setFilteredCities(combined);
+      setShowOriginSuggestions(combined.length > 0);
     } else {
       setShowOriginSuggestions(false);
     }
