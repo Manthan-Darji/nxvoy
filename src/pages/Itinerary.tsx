@@ -12,6 +12,7 @@ import ItineraryHeader from '@/components/itinerary/ItineraryHeader';
 import ItineraryTimeline from '@/components/itinerary/ItineraryTimeline';
 import ItineraryMap from '@/components/itinerary/ItineraryMap';
 import RouteOptimizationModal from '@/components/itinerary/RouteOptimizationModal';
+import BudgetDashboard from '@/components/itinerary/BudgetDashboard';
 import { Activity } from '@/components/itinerary/ActivityCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { optimizeRoute } from '@/services/routeOptimizationService';
@@ -423,6 +424,11 @@ const Itinerary = () => {
             </TabsList>
 
             <TabsContent value="timeline" className="mt-0 flex-1 overflow-auto">
+              <BudgetDashboard
+                days={days}
+                totalBudget={trip.budget || 10000}
+                destination={trip.destination}
+              />
               <ItineraryTimeline
                 days={days}
                 startDate={trip.start_date}
@@ -471,6 +477,11 @@ const Itinerary = () => {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Timeline Section - 60% */}
           <div className="lg:col-span-3">
+            <BudgetDashboard
+              days={days}
+              totalBudget={trip.budget || 10000}
+              destination={trip.destination}
+            />
             <ItineraryTimeline
               days={days}
               startDate={trip.start_date}
