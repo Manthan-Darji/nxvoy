@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-trip-plan]
 verify_jwt = false
+
+[functions.generate-recommendations]
+verify_jwt = false

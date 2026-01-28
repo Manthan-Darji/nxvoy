@@ -426,6 +426,8 @@ const Itinerary = () => {
               <ItineraryTimeline
                 days={days}
                 startDate={trip.start_date}
+                destination={trip.destination}
+                budget={trip.budget || 10000}
                 onActivityUpdate={handleActivityUpdate}
                 onActivityDelete={handleActivityDelete}
                 onActivityAdd={handleActivityAdd}
@@ -472,6 +474,8 @@ const Itinerary = () => {
             <ItineraryTimeline
               days={days}
               startDate={trip.start_date}
+              destination={trip.destination}
+              budget={trip.budget || 10000}
               onActivityUpdate={handleActivityUpdate}
               onActivityDelete={handleActivityDelete}
               onActivityAdd={handleActivityAdd}

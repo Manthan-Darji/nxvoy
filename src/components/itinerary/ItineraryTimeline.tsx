@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import DayTabs from './DayTabs';
 import ActivityCard, { Activity } from './ActivityCard';
 import ActivityEditModal from './ActivityEditModal';
+import ActivityRecommendations from './ActivityRecommendations';
 
 interface DayData {
   day: number;
@@ -15,6 +16,8 @@ interface DayData {
 interface ItineraryTimelineProps {
   days: DayData[];
   startDate: string | null;
+  destination: string;
+  budget: number;
   onActivitySelect?: (activity: Activity, dayNumber: number) => void;
   onActivityUpdate?: (dayNumber: number, activityIndex: number, updatedActivity: Activity) => void;
   onActivityDelete?: (dayNumber: number, activityIndex: number) => void;
@@ -24,7 +27,9 @@ interface ItineraryTimelineProps {
 
 const ItineraryTimeline = ({ 
   days, 
-  startDate, 
+  startDate,
+  destination,
+  budget,
   onActivitySelect,
   onActivityUpdate,
   onActivityDelete,
@@ -142,7 +147,7 @@ const ItineraryTimeline = ({
       {editable && (
         <Button
           variant="outline"
-          className="w-full border-dashed border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors min-h-[48px] text-base"
+          className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-colors min-h-[48px] text-base"
           onClick={handleAddClick}
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -150,6 +155,17 @@ const ItineraryTimeline = ({
         </Button>
       )}
 
+      {/* AI Recommendations Section */}
+      {editable && (
+        <ActivityRecommendations
+          destination={destination}
+          currentActivities={currentDayData?.activities || []}
+          budget={budget}
+          dayNumber={selectedDay}
+          tripDate={currentDate ? format(currentDate, 'yyyy-MM-dd') : undefined}
+          onAddActivity={(activity) => onActivityAdd?.(selectedDay, activity)}
+        />
+      )}
       {/* Edit Modal */}
       <ActivityEditModal
         isOpen={editModalOpen}
