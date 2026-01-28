@@ -402,6 +402,9 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     setTripData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Maximum budget the DB can accept (numeric(16,2) allows up to 10^14 - 1)
+  const MAX_BUDGET = 99_999_999_999_999;
+
   const handleGenerateTrip = async () => {
     const MAX_RETRIES = 1; // keep retries minimal to avoid long waits
     
@@ -414,6 +417,24 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
       return;
     }
 
+    // Parse and clamp budget to avoid numeric overflow in database
+    let budgetValue = parseFloat(tripData.budget);
+    if (!Number.isFinite(budgetValue) || budgetValue <= 0) {
+      toast({
+        title: 'Invalid budget',
+        description: 'Please enter a valid budget amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (budgetValue > MAX_BUDGET) {
+      budgetValue = MAX_BUDGET;
+      toast({
+        title: 'Budget capped',
+        description: `Maximum budget is ${getCurrencySymbol()}${MAX_BUDGET.toLocaleString()}. We'll use that.`,
+      });
+    }
+
     setIsProcessing(true);
 
     try {
@@ -424,7 +445,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
         destination: tripData.destination,
         startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
         endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
-        budget: parseFloat(tripData.budget),
+        budget: budgetValue,
         currency: tripData.currency,
         preferences: tripData.preferences,
       };
@@ -489,7 +510,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
           destination: tripData.destination,
           start_date: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : null,
           end_date: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : null,
-          budget: parseFloat(tripData.budget),
+          budget: budgetValue,
           notes: JSON.stringify(tripPlan), // Store the full trip plan as JSON
           status: 'planning',
         })
@@ -498,7 +519,12 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
 
       if (saveError) {
         console.error('[TripWizard] Database save error:', saveError);
-        throw new Error('Failed to save trip. Please try again.');
+        // Provide actionable message based on error type
+        const isOverflow = saveError.message?.includes('numeric field overflow') || saveError.code === '22003';
+        const errorMessage = isOverflow
+          ? 'Budget value is too large. Please enter a smaller amount.'
+          : 'Failed to save trip. Please try again.';
+        throw new Error(errorMessage);
       }
 
       console.log('[TripWizard] Trip saved with ID:', savedTrip.id);
