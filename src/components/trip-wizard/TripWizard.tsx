@@ -402,7 +402,9 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     setTripData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGenerateTrip = async () => {
+  const handleGenerateTrip = async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    
     if (!user) {
       toast({
         title: 'Please log in',
@@ -417,19 +419,30 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Call the edge function to generate trip plan
-      const tripPlan = await generateTripPlan(
-        {
-          origin: tripData.origin,
-          destination: tripData.destination,
-          startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
-          endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
-          budget: parseFloat(tripData.budget),
-          currency: tripData.currency,
-          preferences: tripData.preferences,
-        },
-        session?.access_token
-      );
+      // Call the edge function to generate trip plan with retry logic
+      let tripPlan;
+      try {
+        tripPlan = await generateTripPlan(
+          {
+            origin: tripData.origin,
+            destination: tripData.destination,
+            startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
+            endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
+            budget: parseFloat(tripData.budget),
+            currency: tripData.currency,
+            preferences: tripData.preferences,
+          },
+          session?.access_token
+        );
+      } catch (genError) {
+        // Retry on transient failures
+        if (retryCount < MAX_RETRIES) {
+          console.log(`[TripWizard] Retrying trip generation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})`);
+          await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s before retry
+          return handleGenerateTrip(retryCount + 1);
+        }
+        throw genError;
+      }
 
       console.log('[TripWizard] Trip plan generated:', tripPlan.trip_title);
 
@@ -457,7 +470,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
         .single();
 
       if (saveError) {
-        throw saveError;
+        console.error('[TripWizard] Database save error:', saveError);
+        throw new Error('Failed to save trip. Please try again.');
       }
 
       console.log('[TripWizard] Trip saved with ID:', savedTrip.id);
@@ -466,13 +480,12 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
 
     } catch (error) {
       console.error('[TripWizard] Error generating trip:', error);
+      setIsProcessing(false);
       toast({
         title: 'Failed to generate trip',
         description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
