@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Check, MapPin, Calendar, Wallet, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface TripSuccessStateProps {
   tripData: {
@@ -22,6 +24,12 @@ interface TripSuccessStateProps {
 
 const TripSuccessState = ({ tripData, tripId, onClose }: TripSuccessStateProps) => {
   const navigate = useNavigate();
+  const { markFirstTripCreated } = usePWAInstall();
+
+  // Mark first trip created for PWA install prompt
+  useEffect(() => {
+    markFirstTripCreated();
+  }, [markFirstTripCreated]);
 
   const handleViewItinerary = () => {
     if (tripId) {

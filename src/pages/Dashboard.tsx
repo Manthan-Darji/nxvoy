@@ -16,6 +16,8 @@ import TripWizard from '@/components/trip-wizard/TripWizard';
 import TripCard from '@/components/dashboard/TripCard';
 import TripCardSkeleton from '@/components/dashboard/TripCardSkeleton';
 import EmptyTripsState from '@/components/dashboard/EmptyTripsState';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface Trip {
   id: string;
@@ -37,6 +39,7 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { showInstallPrompt, dismissInstallPrompt } = usePWAInstall();
 
   const fetchTrips = async () => {
     if (!user) return;
@@ -260,6 +263,12 @@ const Dashboard = () => {
           }} />
         )}
       </AnimatePresence>
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt 
+        show={showInstallPrompt} 
+        onDismiss={dismissInstallPrompt} 
+      />
     </div>
   );
 };
