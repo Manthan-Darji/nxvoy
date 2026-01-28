@@ -143,3 +143,14 @@ This would require:
 - Users will see the correct spatial relationship between activities
 - InfoWindows will open at the correct positions
 
+---
+
+## ✅ COMPLETED: Map Marker Fix
+
+The `TripResultMap.tsx` has been updated to:
+1. Use Google Places API `findPlaceFromQuery` instead of random offsets
+2. Cache geocoded results to avoid repeated API calls
+3. Show loading progress while geocoding activities
+4. Handle errors gracefully with fallback queries
+5. Display count of successfully mapped locations
+
