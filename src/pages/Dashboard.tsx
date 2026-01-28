@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plane, MapPin, Calendar, Star, LogOut } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import TripWizard from '@/components/trip-wizard/TripWizard';
 
 const Dashboard = () => {
+  const [showTripWizard, setShowTripWizard] = useState(false);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +49,10 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="glass-card hover-lift cursor-pointer">
+          <Card 
+            className="glass-card hover-lift cursor-pointer"
+            onClick={() => setShowTripWizard(true)}
+          >
             <CardContent className="p-6 flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
                 <MapPin className="w-6 h-6 text-primary-foreground" />
@@ -103,12 +110,22 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="btn-primary-gradient border-0">
+            <Button 
+              className="btn-primary-gradient border-0"
+              onClick={() => setShowTripWizard(true)}
+            >
               Start a New Trip
             </Button>
           </CardContent>
         </Card>
       </main>
+
+      {/* Trip Wizard Modal */}
+      <AnimatePresence>
+        {showTripWizard && (
+          <TripWizard onClose={() => setShowTripWizard(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
