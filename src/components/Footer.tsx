@@ -30,18 +30,18 @@ const socialLinks = [
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground text-background py-16">
+    <footer className="bg-black/60 backdrop-blur-md border-t border-white/10 text-foreground py-16">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
             <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <Plane className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <Plane className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-background">NxVoy</span>
+              <span className="text-xl font-bold text-white">NxVoy</span>
             </a>
-            <p className="text-background/60 mb-6 max-w-sm">
+            <p className="text-muted-foreground mb-6 max-w-sm">
               Your AI travel companion. Plan smarter, travel better with Shasa by your side.
             </p>
             <div className="flex gap-4">
@@ -50,7 +50,7 @@ const Footer = () => {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="w-10 h-10 rounded-lg bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors"
+                  className="w-10 h-10 rounded-lg glass flex items-center justify-center hover:bg-white/20 transition-colors text-foreground hover:text-white"
                 >
                   <social.icon className="w-5 h-5" />
                 </a>
@@ -60,11 +60,11 @@ const Footer = () => {
 
           {/* Links */}
           <div>
-            <h4 className="font-semibold mb-4">Product</h4>
+            <h4 className="font-semibold mb-4 text-white">Product</h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-background/60 hover:text-background transition-colors">
+                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
                   </a>
                 </li>
@@ -73,11 +73,11 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Company</h4>
+            <h4 className="font-semibold mb-4 text-white">Company</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-background/60 hover:text-background transition-colors">
+                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
                   </a>
                 </li>
@@ -86,11 +86,11 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Support</h4>
+            <h4 className="font-semibold mb-4 text-white">Support</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-background/60 hover:text-background transition-colors">
+                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
                   </a>
                 </li>
@@ -100,14 +100,14 @@ const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div className="pt-8 border-t border-background/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-background/60 text-sm">
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-muted-foreground text-sm">
             © 2026 NxVoy. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm text-background/60">
-            <a href="#" className="hover:text-background transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-background transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-background transition-colors">Cookies</a>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-primary transition-colors">Cookies</a>
           </div>
         </div>
       </div>

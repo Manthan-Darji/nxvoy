@@ -2,10 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
+    /* Dark Glassmorphism Theme - Zinc 950 Base */
+    --background: 240 10% 3.9%;
+    --foreground: 240 5% 64.9%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 240 5% 64.9%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 240 5% 64.9%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 15%;
+    --secondary-foreground: 240 5% 64.9%;
+
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 55%;
+
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 5% 17%;
+    --input: 240 5% 17%;
+    --ring: 239 84% 67%;
+
+    --radius: 0.75rem;
+
+    /* Custom NxVoy colors */
+    --nxvoy-blue: 239 84% 67%;
+    --nxvoy-teal: 168 76% 40%;
+    --nxvoy-blue-light: 239 84% 95%;
+    --nxvoy-teal-light: 168 76% 95%;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(0, 0, 0, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%) 0%, hsl(168 76% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(239 84% 67%) 0%, hsl(200 80% 45%) 50%, hsl(168 76% 40%) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
+
+    /* Shadows */
+    --shadow-card: 0 4px 20px -4px hsl(239 84% 67% / 0.15);
+    --shadow-card-hover: 0 12px 32px -8px hsl(239 84% 67% / 0.25);
+    --shadow-button: 0 4px 14px -2px hsl(239 84% 67% / 0.4);
+    --shadow-glow: 0 0 40px -10px hsl(239 84% 67% / 0.5);
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 240 5% 64.9%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 15%;
+    --sidebar-accent-foreground: 240 5% 64.9%;
+    --sidebar-border: 240 5% 17%;
+    --sidebar-ring: 239 84% 67%;
+  }
+
+  /* Keep light mode as an option but dark is default */
+  .light {
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
 
@@ -15,7 +79,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 224 76% 40%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -32,25 +96,7 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 224 76% 40%;
-
-    --radius: 0.75rem;
-
-    /* Custom NxVoy colors */
-    --nxvoy-blue: 224 76% 40%;
-    --nxvoy-teal: 168 76% 40%;
-    --nxvoy-blue-light: 224 76% 95%;
-    --nxvoy-teal-light: 168 76% 95%;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(224 76% 40%) 0%, hsl(168 76% 40%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(224 76% 40%) 0%, hsl(200 80% 45%) 50%, hsl(168 76% 40%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
-
-    /* Shadows */
-    --shadow-card: 0 4px 20px -4px hsl(224 76% 40% / 0.15);
-    --shadow-card-hover: 0 12px 32px -8px hsl(224 76% 40% / 0.25);
-    --shadow-button: 0 4px 14px -2px hsl(224 76% 40% / 0.4);
+    --ring: 239 84% 67%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -59,45 +105,6 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 200 80% 50%;
-    --primary-foreground: 222 47% 6%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 168 76% 45%;
-    --accent-foreground: 222 47% 6%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 200 80% 50%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -114,6 +121,10 @@
 }
 
 @layer utilities {
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
   .gradient-primary {
     background: var(--gradient-primary);
   }
@@ -140,23 +151,57 @@
   .shadow-button {
     box-shadow: var(--shadow-button);
   }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Glassmorphism utilities */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-card {
+    @apply bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:bg-black/50 hover:border-white/20 transition-all duration-300;
+  }
+
+  /* Text styles */
+  .text-heading {
+    @apply text-white font-bold;
+  }
+
+  .text-data {
+    @apply font-mono text-foreground;
+  }
 }
 
 @layer components {
   .card-trip {
-    @apply bg-card rounded-2xl p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+    @apply bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:bg-black/50 hover:border-white/20 hover:-translate-y-1;
   }
 
   .btn-primary-gradient {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white rounded-xl gradient-primary shadow-button transition-all duration-300 hover:scale-105 hover:shadow-lg;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white rounded-xl bg-primary hover:bg-primary/90 shadow-button transition-all duration-300 hover:scale-105 hover:shadow-lg;
   }
 
   .btn-outline-hero {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white border-2 border-white/30 rounded-xl backdrop-blur-sm transition-all duration-300 hover:bg-white/10 hover:border-white/50;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold text-white border border-white/20 rounded-xl backdrop-blur-sm transition-all duration-300 hover:bg-white/10 hover:border-white/30;
   }
 
   .nav-link {
-    @apply text-foreground/80 font-medium transition-colors duration-200 hover:text-primary;
+    @apply text-foreground font-medium transition-colors duration-200 hover:text-primary;
+  }
+
+  /* Pill input style */
+  .input-pill {
+    @apply h-14 px-6 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300;
   }
 }
 
@@ -203,4 +248,18 @@
 
 .animate-fade-up {
   animation: fade-up 0.6s ease-out forwards;
+}
+
+/* Glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px -5px hsl(239 84% 67% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px -5px hsl(239 84% 67% / 0.6);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
 }
