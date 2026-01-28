@@ -1,4 +1,4 @@
-import { Plane, Twitter, Instagram, Facebook, Linkedin } from "lucide-react";
+import { Plane, Linkedin } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -22,9 +22,6 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Facebook, href: "#", label: "Facebook" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
 ];
 
