@@ -1,4 +1,4 @@
-import { Plane, Linkedin } from "lucide-react";
+import { Plane } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -21,9 +21,6 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-];
 
 const Footer = () => {
   return (
@@ -41,18 +38,6 @@ const Footer = () => {
             <p className="text-muted-foreground mb-6 max-w-sm">
               Your AI travel companion. Plan smarter, travel better with Shasa by your side.
             </p>
-            <div className="flex gap-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  aria-label={social.label}
-                  className="w-10 h-10 rounded-lg glass flex items-center justify-center hover:bg-white/20 transition-colors text-foreground hover:text-white"
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Links */}
