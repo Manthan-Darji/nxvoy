@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Activity } from './ActivityCard';
 import { calculateTotalTravelTime } from '@/services/routeOptimizationService';
+import { GOOGLE_MAPS_API_KEY } from '@/config/keys';
 
 interface DayData {
   day: number;
@@ -66,7 +67,7 @@ const ItineraryMap = ({ days, selectedDay, onOptimizeRoute, isOptimizing }: Itin
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = GOOGLE_MAPS_API_KEY;
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',

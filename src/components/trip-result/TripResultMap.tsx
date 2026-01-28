@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { MapPin, Navigation } from 'lucide-react';
+import { GOOGLE_MAPS_API_KEY } from '@/config/keys';
 
 interface TripActivity {
   time: string;
@@ -71,7 +72,7 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
   const [selectedActivity, setSelectedActivity] = useState<TripActivity | null>(null);
   
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: ['places'],
   });
 
