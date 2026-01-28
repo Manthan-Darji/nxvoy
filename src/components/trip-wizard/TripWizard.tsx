@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { generateTripPlan } from '@/services/tripPlanService';
+import { generateTripPlan, HttpError } from '@/services/tripPlanService';
 import ProcessingState from './ProcessingState';
 import TripSuccessState from './TripSuccessState';
 
@@ -402,8 +402,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     setTripData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleGenerateTrip = async (retryCount = 0) => {
-    const MAX_RETRIES = 2;
+  const handleGenerateTrip = async () => {
+    const MAX_RETRIES = 1; // keep retries minimal to avoid long waits
     
     if (!user) {
       toast({
@@ -419,29 +419,56 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Call the edge function to generate trip plan with retry logic
-      let tripPlan;
-      try {
-        tripPlan = await generateTripPlan(
-          {
-            origin: tripData.origin,
-            destination: tripData.destination,
-            startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
-            endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
-            budget: parseFloat(tripData.budget),
-            currency: tripData.currency,
-            preferences: tripData.preferences,
-          },
-          session?.access_token
-        );
-      } catch (genError) {
-        // Retry on transient failures
-        if (retryCount < MAX_RETRIES) {
-          console.log(`[TripWizard] Retrying trip generation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})`);
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s before retry
-          return handleGenerateTrip(retryCount + 1);
+      const requestPayload = {
+        origin: tripData.origin,
+        destination: tripData.destination,
+        startDate: tripData.startDate ? format(tripData.startDate, 'yyyy-MM-dd') : '',
+        endDate: tripData.endDate ? format(tripData.endDate, 'yyyy-MM-dd') : '',
+        budget: parseFloat(tripData.budget),
+        currency: tripData.currency,
+        preferences: tripData.preferences,
+      };
+
+      const isRetryable = (err: unknown) => {
+        if (err instanceof HttpError) {
+          return [429, 500, 502, 503].includes(err.status);
         }
-        throw genError;
+        if (err instanceof Error) {
+          const msg = err.message.toLowerCase();
+          return msg.includes('failed to fetch') || msg.includes('network') || msg.includes('temporarily');
+        }
+        return false;
+      };
+
+      const getRetryDelayMs = (err: unknown, attemptIndex: number) => {
+        // attemptIndex: 0 => first retry
+        if (err instanceof HttpError && err.status === 429) {
+          const s = err.retryAfterSeconds;
+          if (typeof s === 'number' && Number.isFinite(s) && s > 0) return Math.min(10_000, s * 1000);
+          return 2500;
+        }
+        return 1500 * (attemptIndex + 1);
+      };
+
+      // Call trip generation; retry only on truly transient failures
+      let tripPlan;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          tripPlan = await generateTripPlan(requestPayload, session?.access_token);
+          break;
+        } catch (genError) {
+          if (attempt < MAX_RETRIES && isRetryable(genError)) {
+            const delay = getRetryDelayMs(genError, attempt);
+            console.log(`[TripWizard] Transient failure; retrying in ${delay}ms (attempt ${attempt + 2}/${MAX_RETRIES + 1})`, genError);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+          throw genError;
+        }
+      }
+
+      if (!tripPlan) {
+        throw new Error('Failed to generate trip plan. Please try again.');
       }
 
       console.log('[TripWizard] Trip plan generated:', tripPlan.trip_title);

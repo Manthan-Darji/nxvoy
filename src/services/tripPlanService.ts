@@ -1,5 +1,19 @@
 const BASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
+export class HttpError extends Error {
+  status: number;
+  hint?: string;
+  retryAfterSeconds?: number;
+
+  constructor(message: string, status: number, opts?: { hint?: string; retryAfterSeconds?: number }) {
+    super(message);
+    this.name = 'HttpError';
+    this.status = status;
+    this.hint = opts?.hint;
+    this.retryAfterSeconds = opts?.retryAfterSeconds;
+  }
+}
+
 export interface TripPlanRequest {
   origin: string;
   destination: string;
@@ -68,21 +82,31 @@ export async function generateTripPlan(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const retryAfterHeader = response.headers.get('Retry-After');
+      const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : undefined;
       console.error('[tripPlanService] Error:', errorData);
       
       if (response.status === 429) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
+        throw new HttpError('Too many requests. Please wait a moment and try again.', 429, {
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
+          hint: errorData.hint,
+        });
       }
       
       if (response.status === 402) {
-        throw new Error('AI service credits exhausted. Please try again later.');
+        throw new HttpError('AI service credits exhausted. Please try again later.', 402, {
+          hint: errorData.hint,
+        });
       }
       
       if (response.status === 504) {
-        throw new Error(errorData.hint || 'Request timed out. Please try with a simpler trip.');
+        throw new HttpError(errorData.hint || 'Request timed out. Please try with a simpler trip.', 504);
       }
       
-      throw new Error(errorData.error || errorData.hint || 'Failed to generate trip plan');
+      throw new HttpError(errorData.error || errorData.hint || 'Failed to generate trip plan', response.status, {
+        hint: errorData.hint,
+        retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
+      });
     }
 
     const data = await response.json();
@@ -98,7 +122,10 @@ export async function generateTripPlan(
     clearTimeout(timeoutId);
     
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timed out. Please try again with a shorter trip or simpler preferences.');
+      throw new HttpError(
+        'Request timed out. Please try again with a shorter trip or simpler preferences.',
+        504
+      );
     }
     
     throw error;

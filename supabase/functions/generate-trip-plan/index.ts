@@ -89,6 +89,10 @@ serve(async (req) => {
       ? preferences.join(', ') 
       : 'general sightseeing, balanced activities';
 
+    const activitiesPerDay = days <= 4 ? '4-6' : days <= 7 ? '3-5' : '3-4';
+    // Keep responses bounded; large token budgets can encourage long outputs and slower generations.
+    const maxTokens = Math.min(9000, 1200 * days + 1500);
+
     const prompt = `Create a detailed ${days}-day trip itinerary:
 
 FROM: ${origin}
@@ -105,7 +109,7 @@ REQUIREMENTS:
    - Hotels: ₹800-3000/night for budget-mid range
    - Meals: ₹100-500 per meal
    - Local transport: ₹50-300 per ride
-4. Each day should have 4-6 activities covering morning, afternoon, and evening.
+4. Each day should have ${activitiesPerDay} activities covering morning, afternoon, and evening.
 5. Include at least 2-3 meals per day.
 6. Ensure total cost stays within budget of ${currency} ${budget}.
 
@@ -113,9 +117,9 @@ Generate realistic, actionable itinerary with real place names and accurate pric
 
     console.log("[generate-trip-plan] Calling AI gateway...");
     
-    // Create abort controller for timeout (90 seconds for longer trips)
+     // Create abort controller for timeout (keep bounded for better UX)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+     const timeoutId = setTimeout(() => controller.abort(), 75000);
 
     try {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -125,13 +129,14 @@ Generate realistic, actionable itinerary with real place names and accurate pric
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          // Faster + more consistent structured output than preview models
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: prompt },
           ],
-          temperature: 0.7,
-          max_tokens: 12000,
+          temperature: 0.4,
+          max_tokens: maxTokens,
         }),
         signal: controller.signal,
       });
@@ -145,7 +150,10 @@ Generate realistic, actionable itinerary with real place names and accurate pric
         if (response.status === 429) {
           return new Response(
             JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            {
+              status: 429,
+              headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "2" },
+            }
           );
         }
         
@@ -243,7 +251,7 @@ Generate realistic, actionable itinerary with real place names and accurate pric
     } catch (fetchError: unknown) {
       clearTimeout(timeoutId);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error("[generate-trip-plan] Request timed out after 90 seconds");
+        console.error("[generate-trip-plan] Request timed out after 75 seconds");
         return new Response(
           JSON.stringify({ error: "Request timed out", hint: "The trip is complex. Please try with fewer days or simpler preferences." }),
           { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
