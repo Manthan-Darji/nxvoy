@@ -38,7 +38,7 @@ const dayColors = [
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
-  minHeight: '400px',
+  minHeight: '350px',
 };
 
 const defaultCenter = { lat: 48.8566, lng: 2.3522 }; // Paris as default
@@ -186,10 +186,10 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
   // No API key
   if (!apiKey) {
     return (
-      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
-        <AlertCircle className="w-12 h-12 mb-4 text-warning" />
-        <p className="text-lg font-medium text-center text-foreground">Google Maps API key required</p>
-        <p className="text-sm text-center">Add VITE_GOOGLE_MAPS_API_KEY to enable the map</p>
+      <Card className="h-full min-h-[350px] flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-6">
+        <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 mb-4 text-warning" />
+        <p className="text-base sm:text-lg font-medium text-center text-foreground">Google Maps API key required</p>
+        <p className="text-xs sm:text-sm text-center">Add VITE_GOOGLE_MAPS_API_KEY to enable the map</p>
       </Card>
     );
   }
@@ -197,10 +197,10 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
   // Loading error
   if (loadError) {
     return (
-      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
-        <AlertCircle className="w-12 h-12 mb-4 text-destructive" />
-        <p className="text-lg font-medium text-center">Failed to load Google Maps</p>
-        <p className="text-sm text-center">Please check your API key and try again</p>
+      <Card className="h-full min-h-[350px] flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-6">
+        <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 mb-4 text-destructive" />
+        <p className="text-base sm:text-lg font-medium text-center">Failed to load Google Maps</p>
+        <p className="text-xs sm:text-sm text-center">Please check your API key and try again</p>
       </Card>
     );
   }
@@ -208,9 +208,9 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
   // Loading state
   if (!isLoaded) {
     return (
-      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
-        <Loader2 className="w-12 h-12 mb-4 animate-spin text-primary" />
-        <p className="text-lg font-medium text-center">Loading map...</p>
+      <Card className="h-full min-h-[350px] flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-6">
+        <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 mb-4 animate-spin text-primary" />
+        <p className="text-base sm:text-lg font-medium text-center">Loading map...</p>
       </Card>
     );
   }
@@ -218,16 +218,16 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
   // No markers
   if (markers.length === 0) {
     return (
-      <Card className="h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground p-6">
-        <MapPin className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium text-center">No locations yet</p>
-        <p className="text-sm text-center">Activities with coordinates will appear on the map</p>
+      <Card className="h-full min-h-[350px] flex flex-col items-center justify-center text-muted-foreground p-4 sm:p-6">
+        <MapPin className="w-10 h-10 sm:w-12 sm:h-12 mb-4 opacity-50" />
+        <p className="text-base sm:text-lg font-medium text-center">No locations yet</p>
+        <p className="text-xs sm:text-sm text-center">Activities with coordinates will appear on the map</p>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full min-h-[400px] overflow-hidden flex flex-col">
+    <Card className="h-full min-h-[350px] overflow-hidden flex flex-col">
       {/* Map */}
       <div className="flex-1 relative">
         <GoogleMap
@@ -295,27 +295,28 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
         </GoogleMap>
 
         {/* Open in Google Maps button */}
-        <div className="absolute bottom-4 left-4 z-10">
+        <div className="absolute bottom-3 left-3 z-10">
           <Button 
             onClick={openInGoogleMaps} 
             size="sm"
             variant="secondary"
-            className="shadow-lg"
+            className="shadow-lg text-xs sm:text-sm min-h-[40px]"
           >
-            <Navigation className="w-4 h-4 mr-2" />
-            Full Route
+            <Navigation className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Full Route</span>
+            <span className="sm:hidden">Route</span>
           </Button>
         </div>
       </div>
 
-      {/* Markers Legend */}
-      <div className="p-4 border-t bg-card">
-        <h4 className="text-sm font-semibold mb-3">Locations</h4>
-        <div className="space-y-2 max-h-[150px] overflow-y-auto">
+      {/* Markers Legend - More compact on mobile */}
+      <div className="p-3 sm:p-4 border-t bg-card">
+        <h4 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Locations</h4>
+        <div className="space-y-1.5 sm:space-y-2 max-h-[120px] sm:max-h-[150px] overflow-y-auto">
           {markers.map((marker, i) => (
             <button
               key={i}
-              className="flex items-center gap-2 text-sm w-full text-left hover:bg-muted/50 p-1 rounded transition-colors"
+              className="flex items-center gap-2 text-xs sm:text-sm w-full text-left hover:bg-muted/50 p-1.5 sm:p-2 rounded transition-colors min-h-[36px]"
               onClick={() => {
                 setSelectedMarker(marker);
                 map?.panTo({ lat: marker.lat, lng: marker.lng });
@@ -323,15 +324,15 @@ const ItineraryMap = ({ days, selectedDay }: ItineraryMapProps) => {
               }}
             >
               <span 
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0"
                 style={{ backgroundColor: dayColors[(marker.day - 1) % dayColors.length] }}
               >
                 {marker.index}
               </span>
-              <span className="truncate text-foreground">
+              <span className="truncate text-foreground flex-1">
                 {marker.name}
               </span>
-              <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">
+              <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">
                 Day {marker.day}
               </span>
             </button>

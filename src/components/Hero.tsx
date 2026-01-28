@@ -68,15 +68,15 @@ const Hero = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: "0.3s" }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up px-4" style={{ animationDelay: "0.3s" }}>
               <button 
                 onClick={() => navigate('/signup')}
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-bold text-primary-foreground bg-primary rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 animate-glow-pulse"
+                className="group inline-flex items-center justify-center gap-3 px-8 py-4 min-h-[48px] text-base sm:text-lg font-bold text-primary-foreground bg-primary rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 animate-glow-pulse"
               >
                 <span>Start Planning Free</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-foreground border border-white/20 rounded-xl backdrop-blur-sm hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-300">
+              <button className="inline-flex items-center justify-center gap-2 px-8 py-4 min-h-[48px] text-base sm:text-lg font-semibold text-foreground border border-white/20 rounded-xl backdrop-blur-sm hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-300">
                 Watch Demo
               </button>
             </div>
