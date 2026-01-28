@@ -61,15 +61,15 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-blue-600 to-teal-500">
+    <div className="flex flex-col h-full bg-white dark:bg-card safe-area-top">
+      {/* Header - Enhanced for mobile with larger touch targets */}
+      <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-blue-600 to-teal-500 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Shasa</h3>
+            <h3 className="font-semibold text-white text-base">Shasa</h3>
             <p className="text-xs text-white/80">Your AI Travel Assistant</p>
           </div>
         </div>
@@ -79,10 +79,10 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
               variant="ghost"
               size="icon"
               onClick={clearChat}
-              className="text-white/80 hover:text-white hover:bg-white/20"
+              className="text-white/80 hover:text-white hover:bg-white/20 min-w-[44px] min-h-[44px]"
               title="Clear chat"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-5 h-5" />
             </Button>
           )}
           {onClose && (
@@ -90,9 +90,9 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/20"
+              className="text-white/80 hover:text-white hover:bg-white/20 min-w-[44px] min-h-[44px]"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </Button>
           )}
         </div>
@@ -195,23 +195,23 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
         </div>
       )}
 
-      {/* Input - Fixed at bottom on mobile */}
-      <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-border bg-white dark:bg-card safe-area-bottom">
-        <div className="flex gap-2">
+      {/* Input - Fixed at bottom on mobile with safe area */}
+      <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-border bg-white dark:bg-card shrink-0 pb-safe-area-bottom">
+        <div className="flex gap-2 items-center">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Where do you want to go?"
             disabled={isLoading}
-            className="flex-1 rounded-full bg-gray-100 dark:bg-muted border-0 focus-visible:ring-2 focus-visible:ring-blue-500 h-12 text-base"
+            className="flex-1 rounded-full bg-gray-100 dark:bg-muted border-0 focus-visible:ring-2 focus-visible:ring-blue-500 h-12 min-h-[48px] text-base"
           />
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button 
               type="submit" 
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="rounded-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 border-0 w-12 h-12 min-w-[48px]"
+              className="rounded-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 border-0 w-12 h-12 min-w-[48px] min-h-[48px]"
             >
               <Send className="w-5 h-5" />
             </Button>

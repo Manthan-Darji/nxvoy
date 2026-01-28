@@ -123,40 +123,40 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-safe-area-bottom">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-lg sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      {/* Header - Mobile optimized */}
+      <header className="border-b border-white/10 bg-black/40 backdrop-blur-lg sticky top-0 z-40 safe-area-top">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
-              <Plane className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
+              <Plane className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
               NxVoy
             </span>
           </a>
           <Button 
             variant="ghost" 
             onClick={handleLogout} 
-            className="gap-2 text-muted-foreground hover:text-white"
+            className="gap-2 text-muted-foreground hover:text-white min-h-[44px] px-3 sm:px-4"
           >
-            <LogOut className="w-4 h-4" />
-            Log Out
+            <LogOut className="w-5 h-5" />
+            <span className="hidden sm:inline">Log Out</span>
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 font-heading">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 font-heading">
             Your Travel Plans ✈️
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             Welcome back, <span className="text-primary font-semibold">{displayName}</span>! 
             Ready for your next adventure?
           </p>
@@ -167,45 +167,45 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
-          {/* Plan New Trip Button */}
+          {/* Plan New Trip Button - Full width on mobile */}
           <Button 
             size="lg"
-            className="btn-primary-gradient border-0 text-lg group"
+            className="btn-primary-gradient border-0 text-base sm:text-lg group w-full sm:w-auto min-h-[52px]"
             onClick={() => setShowTripWizard(true)}
           >
             <Sparkles className="w-5 h-5 mr-2 group-hover:animate-pulse" />
             Plan New Trip with Shasa
           </Button>
 
-          {/* Sort Dropdown */}
+          {/* Sort Dropdown - Touch friendly */}
           {trips.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+                <Button variant="outline" className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 min-h-[48px] w-full sm:w-auto">
                   <ArrowUpDown className="w-4 h-4" />
                   {getSortLabel(sortBy)}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-card border-white/10">
+              <DropdownMenuContent className="glass-card border-white/10 z-50 bg-background">
                 <DropdownMenuItem 
                   onClick={() => setSortBy('newest')}
-                  className="gap-2 cursor-pointer"
+                  className="gap-2 cursor-pointer min-h-[44px]"
                 >
                   <Clock className="w-4 h-4" />
                   Newest First
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setSortBy('oldest')}
-                  className="gap-2 cursor-pointer"
+                  className="gap-2 cursor-pointer min-h-[44px]"
                 >
                   <Clock className="w-4 h-4 rotate-180" />
                   Oldest First
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setSortBy('upcoming')}
-                  className="gap-2 cursor-pointer"
+                  className="gap-2 cursor-pointer min-h-[44px]"
                 >
                   <CalendarDays className="w-4 h-4" />
                   Upcoming Trips
@@ -215,9 +215,9 @@ const Dashboard = () => {
           )}
         </motion.div>
 
-        {/* Trips Grid */}
+        {/* Trips Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(6)].map((_, i) => (
               <TripCardSkeleton key={i} />
             ))}
@@ -229,7 +229,7 @@ const Dashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
           >
             <AnimatePresence mode="popLayout">
               {sortedTrips.map((trip, index) => (
