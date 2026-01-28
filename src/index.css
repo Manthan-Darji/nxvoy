@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .print\\:hidden,
+  nav,
+  .fixed,
+  button,
+  [role="navigation"] {
+    display: none !important;
+  }
+  
+  .print\\:bg-white {
+    background: white !important;
+  }
+  
+  .print\\:text-black {
+    color: black !important;
+  }
+  
+  /* Show only itinerary content */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  /* Hide map on print */
+  .lg\\:col-span-2 {
+    display: none !important;
+  }
+  
+  /* Full width timeline */
+  .lg\\:col-span-3 {
+    grid-column: span 5 !important;
+  }
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @layer base {
