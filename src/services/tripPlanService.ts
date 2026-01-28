@@ -49,38 +49,58 @@ export async function generateTripPlan(
 ): Promise<TripPlanResponse> {
   console.log('[tripPlanService] Generating trip plan:', request);
 
-  const response = await fetch(`${BASE_URL}/functions/v1/generate-trip-plan`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-    },
-    body: JSON.stringify(request),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute client timeout
 
-  console.log('[tripPlanService] Response status:', response.status);
+  try {
+    const response = await fetch(`${BASE_URL}/functions/v1/generate-trip-plan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('[tripPlanService] Error:', errorData);
+    clearTimeout(timeoutId);
+    console.log('[tripPlanService] Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('[tripPlanService] Error:', errorData);
+      
+      if (response.status === 429) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      
+      if (response.status === 402) {
+        throw new Error('AI service credits exhausted. Please try again later.');
+      }
+      
+      if (response.status === 504) {
+        throw new Error(errorData.hint || 'Request timed out. Please try with a simpler trip.');
+      }
+      
+      throw new Error(errorData.error || errorData.hint || 'Failed to generate trip plan');
+    }
+
+    const data = await response.json();
     
-    if (response.status === 429) {
-      throw new Error('Too many requests. Please wait a moment and try again.');
+    if (!data.tripPlan || !data.tripPlan.itinerary) {
+      throw new Error('Invalid response from server. Please try again.');
     }
     
-    if (response.status === 402) {
-      throw new Error('AI service credits exhausted. Please try again later.');
+    console.log('[tripPlanService] Trip plan generated successfully');
+    
+    return data.tripPlan;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again with a shorter trip or simpler preferences.');
     }
     
-    if (response.status === 504) {
-      throw new Error(errorData.hint || 'Request timed out. Please try with a simpler trip.');
-    }
-    
-    throw new Error(errorData.error || errorData.hint || 'Failed to generate trip plan');
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('[tripPlanService] Trip plan generated successfully');
-  
-  return data.tripPlan;
 }

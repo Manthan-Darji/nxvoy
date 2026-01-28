@@ -97,10 +97,26 @@ const TripResult = () => {
       let tripPlan: TripPlan | undefined;
       if (data.notes) {
         try {
-          tripPlan = JSON.parse(data.notes);
-        } catch {
-          // Notes might not be JSON
+          const parsed = JSON.parse(data.notes);
+          // Validate that it's a proper trip plan
+          if (parsed && parsed.trip_title && Array.isArray(parsed.itinerary)) {
+            tripPlan = parsed;
+          } else {
+            console.warn('[TripResult] Notes exists but is not a valid trip plan');
+          }
+        } catch (parseError) {
+          console.error('[TripResult] Failed to parse trip notes:', parseError);
         }
+      }
+
+      if (!tripPlan) {
+        toast({
+          title: 'Trip data incomplete',
+          description: 'This trip\'s itinerary could not be loaded. Please try generating a new trip.',
+          variant: 'destructive',
+        });
+        navigate('/dashboard');
+        return;
       }
 
       setTrip({ ...data, trip_plan: tripPlan });
@@ -111,6 +127,7 @@ const TripResult = () => {
         description: 'Failed to load trip details',
         variant: 'destructive',
       });
+      navigate('/dashboard');
     } finally {
       setLoading(false);
     }

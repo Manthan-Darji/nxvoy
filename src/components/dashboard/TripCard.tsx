@@ -73,7 +73,7 @@ const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
     : '/placeholder.svg';
 
   const handleCardClick = () => {
-    navigate(`/itinerary/${trip.id}`);
+    navigate(`/trip/${trip.id}`);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -159,15 +159,15 @@ const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
               <span className="text-sm font-mono text-white/90">{formattedBudget}</span>
             </div>
 
-            {/* View Itinerary Button - Touch-friendly */}
+            {/* View Trip Button - Touch-friendly */}
             <Button 
               className="w-full btn-primary-gradient border-0 group/btn min-h-[48px] text-base"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/itinerary/${trip.id}`);
+                navigate(`/trip/${trip.id}`);
               }}
             >
-              View Itinerary
+              View Trip
               <motion.span
                 className="ml-2"
                 initial={{ x: 0 }}
