@@ -77,27 +77,27 @@ const TripTypeGrid = () => {
             </p>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {tripTypes.map((trip, index) => (
               <div
                 key={trip.title}
                 onClick={() => handleTripClick(trip.prompt)}
-                className="group glass-card p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:bg-black/50 hover:border-white/20 overflow-hidden"
+                className="group glass-card p-5 sm:p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:bg-black/50 hover:border-white/20 overflow-hidden active:scale-[0.98]"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${trip.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                  <trip.icon className="w-7 h-7 text-white" />
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${trip.color} flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                  <trip.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">
                   {trip.title}
                 </h3>
-                <p className="text-foreground">
+                <p className="text-sm sm:text-base text-foreground">
                   {trip.description}
                 </p>
                 
-                {/* Hover indicator */}
-                <div className="mt-4 flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Hover/tap indicator */}
+                <div className="mt-4 flex items-center gap-2 text-primary opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <Sparkles className="w-4 h-4" />
                   <span className="text-sm font-medium">Start planning</span>
                 </div>

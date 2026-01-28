@@ -93,10 +93,10 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
   };
 
   return (
-    <div className="relative flex gap-4">
+    <div className="relative flex gap-2 sm:gap-4">
       {/* Timeline connector */}
       <div className="flex flex-col items-center">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white flex items-center justify-center text-sm font-bold shadow-lg z-10">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg z-10 flex-shrink-0">
           {index + 1}
         </div>
         {!isLast && (
@@ -106,52 +106,52 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
 
       {/* Card Content */}
       <motion.div 
-        className="flex-1 pb-4"
+        className="flex-1 pb-4 min-w-0"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.1 }}
       >
-        <Card className="p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
-          <div className="flex items-start justify-between gap-3">
+        <Card className="p-3 sm:p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+          <div className="flex flex-col gap-3">
             <div className="flex-1 min-w-0">
-              {/* Time Badge */}
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className="text-xs font-mono">
+              {/* Time & Category Badges - Stack on mobile */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                <Badge variant="outline" className="text-[10px] sm:text-xs font-mono">
                   <Clock className="w-3 h-3 mr-1" />
                   {formatTime(activity.startTime)}
                   {activity.endTime && ` - ${formatTime(activity.endTime)}`}
                 </Badge>
-                <Badge className={`text-xs ${config.color}`}>
+                <Badge className={`text-[10px] sm:text-xs ${config.color}`}>
                   {config.icon}
                   <span className="ml-1 capitalize">{activity.category}</span>
                 </Badge>
                 {activity.cuisine && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs">
                     {activity.cuisine}
                   </Badge>
                 )}
               </div>
 
               {/* Activity Name */}
-              <h3 className="font-semibold text-foreground text-lg mb-1">
+              <h3 className="font-semibold text-foreground text-base sm:text-lg mb-1 break-words">
                 {activity.title}
               </h3>
 
               {/* Location */}
               {activity.location && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">{activity.location}</span>
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-start gap-1 mb-2">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span className="break-words">{activity.location}</span>
                 </p>
               )}
 
-              {/* Description - Always visible */}
-              <p className="text-sm text-muted-foreground mb-3">
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3">
                 {activity.description}
               </p>
 
               {/* Meta info */}
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                 {activity.duration && (
                   <span className="flex items-center gap-1 bg-muted/50 px-2 py-1 rounded">
                     <Clock className="w-3 h-3" />
@@ -182,7 +182,7 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
                       className="overflow-hidden"
                     >
                       <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200">
                           💡 <strong>Tip:</strong> {activity.tips}
                         </p>
                       </div>
@@ -193,13 +193,13 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+          {/* Action Buttons - Stack vertically on mobile */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 pt-3 border-t">
             <Button
               variant="outline"
               size="sm"
               onClick={handleGetDirections}
-              className="text-xs"
+              className="text-xs min-h-[44px] sm:min-h-0 justify-center"
             >
               <Navigation className="w-3 h-3 mr-1" />
               Get Directions
@@ -209,7 +209,7 @@ const ActivityCard = ({ activity, index, isLast }: ActivityCardProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-xs"
+                className="text-xs min-h-[44px] sm:min-h-0 justify-center"
               >
                 {isExpanded ? (
                   <>

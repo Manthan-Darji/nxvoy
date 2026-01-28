@@ -61,7 +61,7 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full md:h-[600px] bg-white dark:bg-card">
+    <div className="flex flex-col h-full bg-white dark:bg-card">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-blue-600 to-teal-500">
         <div className="flex items-center gap-3">
@@ -195,8 +195,8 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
         </div>
       )}
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-white dark:bg-card">
+      {/* Input - Fixed at bottom on mobile */}
+      <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-border bg-white dark:bg-card safe-area-bottom">
         <div className="flex gap-2">
           <Input
             ref={inputRef}
@@ -204,16 +204,16 @@ const ShasaChat = ({ onClose, initialMessage }: ShasaChatProps) => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Where do you want to go?"
             disabled={isLoading}
-            className="flex-1 rounded-full bg-gray-100 dark:bg-muted border-0 focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="flex-1 rounded-full bg-gray-100 dark:bg-muted border-0 focus-visible:ring-2 focus-visible:ring-blue-500 h-12 text-base"
           />
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button 
               type="submit" 
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="rounded-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 border-0 w-10 h-10"
+              className="rounded-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 border-0 w-12 h-12 min-w-[48px]"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </Button>
           </motion.div>
         </div>

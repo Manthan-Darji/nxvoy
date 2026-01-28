@@ -177,32 +177,32 @@ const Itinerary = () => {
   // Mobile Layout with Tabs
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
         <ItineraryHeader trip={trip} totalCost={totalCost} />
 
-        <div className="container mx-auto px-4 py-4">
-          <Tabs defaultValue="timeline" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="timeline" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Timeline
+        <div className="flex-1 flex flex-col px-3 py-3">
+          <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2 mb-3 h-12">
+              <TabsTrigger value="timeline" className="flex items-center gap-2 text-sm min-h-[44px]">
+                📋 Timeline
               </TabsTrigger>
-              <TabsTrigger value="map" className="flex items-center gap-2">
-                <Map className="w-4 h-4" />
-                Map
+              <TabsTrigger value="map" className="flex items-center gap-2 text-sm min-h-[44px]">
+                🗺️ Map
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="timeline" className="mt-0">
+            <TabsContent value="timeline" className="mt-0 flex-1 overflow-auto">
               <ItineraryTimeline
                 days={days}
                 startDate={trip.start_date}
               />
             </TabsContent>
 
-            <TabsContent value="map" className="mt-0">
-              <ItineraryMap days={days} selectedDay={selectedDay} />
+            <TabsContent value="map" className="mt-0 flex-1">
+              <div className="h-[calc(100vh-280px)] min-h-[400px]">
+                <ItineraryMap days={days} selectedDay={selectedDay} />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
