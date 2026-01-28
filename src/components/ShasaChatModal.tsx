@@ -39,7 +39,8 @@ const ShasaChatModal = ({ open, onOpenChange, initialMessage }: ShasaChatModalPr
               md:w-[400px] md:h-[600px] 
               md:rounded-2xl 
               overflow-hidden shadow-2xl
-              flex flex-col"
+              flex flex-col
+              bg-background"
           >
             <ShasaChat 
               onClose={() => onOpenChange(false)} 

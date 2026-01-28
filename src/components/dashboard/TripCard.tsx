@@ -116,13 +116,13 @@ const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
               {formatStatus(trip.status)}
             </Badge>
 
-            {/* Delete Button */}
+            {/* Delete Button - Always visible on mobile */}
             <button
               onClick={handleDeleteClick}
-              className="absolute top-3 right-3 p-2 rounded-full bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-500/80 hover:scale-110"
+              className="absolute top-3 right-3 p-2.5 rounded-full bg-black/50 backdrop-blur-sm opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-500/80 hover:scale-110 min-w-[44px] min-h-[44px] flex items-center justify-center"
               disabled={isDeleting}
             >
-              <Trash2 className="w-4 h-4 text-white" />
+              <Trash2 className="w-5 h-5 text-white" />
             </button>
 
             {/* Destination Name */}
@@ -159,9 +159,9 @@ const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
               <span className="text-sm font-mono text-white/90">{formattedBudget}</span>
             </div>
 
-            {/* View Itinerary Button */}
+            {/* View Itinerary Button - Touch-friendly */}
             <Button 
-              className="w-full btn-primary-gradient border-0 group/btn"
+              className="w-full btn-primary-gradient border-0 group/btn min-h-[48px] text-base"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/itinerary/${trip.id}`);
