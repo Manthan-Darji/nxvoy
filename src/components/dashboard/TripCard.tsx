@@ -31,6 +31,7 @@ interface TripCardProps {
   trip: Trip;
   onDelete: (tripId: string) => void;
   isDeleting: boolean;
+  hasCompletedTrip?: boolean;
 }
 
 const getStatusColor = (status: string | null) => {
@@ -51,7 +52,7 @@ const formatStatus = (status: string | null) => {
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
-const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
+const TripCard = ({ trip, onDelete, isDeleting, hasCompletedTrip = false }: TripCardProps) => {
   const navigate = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -109,12 +110,14 @@ const TripCard = ({ trip, onDelete, isDeleting }: TripCardProps) => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             
-            {/* Status Badge */}
-            <Badge 
-              className={`absolute top-3 left-3 ${getStatusColor(trip.status)} border`}
-            >
-              {formatStatus(trip.status)}
-            </Badge>
+            {/* Status Badge - Hide "Planning" if there's a completed trip */}
+            {!(hasCompletedTrip && trip.status?.toLowerCase() === 'planning') && (
+              <Badge 
+                className={`absolute top-3 left-3 ${getStatusColor(trip.status)} border`}
+              >
+                {formatStatus(trip.status)}
+              </Badge>
+            )}
 
             {/* Delete Button - Always visible on mobile */}
             <button

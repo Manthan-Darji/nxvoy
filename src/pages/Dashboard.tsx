@@ -114,6 +114,9 @@ const Dashboard = () => {
     }
   });
 
+  // Check if there's at least one completed trip
+  const hasCompletedTrip = trips.some(trip => trip.status?.toLowerCase() === 'completed');
+
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Traveler';
 
   const getSortLabel = (option: SortOption) => {
@@ -149,78 +152,83 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 sm:py-8">
-        {/* Hero Section */}
+      <main className="container mx-auto px-4 py-6 sm:py-8 lg:py-10">
+        {/* Hero Section - Modernized */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
+          className="mb-8 sm:mb-10"
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 font-heading">
-            Your Travel Plans ✈️
-          </h1>
-          <p className="text-muted-foreground text-base sm:text-lg">
-            Welcome back, <span className="text-primary font-semibold">{displayName}</span>! 
-            Ready for your next adventure?
+          <div className="relative">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 font-heading bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+              Your Travel Plans
+            </h1>
+            <div className="absolute -top-1 -right-8 text-3xl sm:text-4xl animate-bounce" style={{ animationDuration: '2s' }}>
+              ✈️
+            </div>
+          </div>
+          <p className="text-muted-foreground text-base sm:text-lg md:text-xl">
+            Welcome back, <span className="text-primary font-semibold bg-gradient-to-r from-primary to-indigo-400 bg-clip-text text-transparent">{displayName}</span>! 
+            <span className="block sm:inline"> Ready for your next adventure?</span>
           </p>
         </motion.div>
 
-        {/* Action Bar */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 sm:mb-8"
-        >
-          {/* Plan New Trip Button - Full width on mobile */}
-          <Button 
-            size="lg"
-            className="btn-primary-gradient border-0 text-base sm:text-lg group w-full sm:w-auto min-h-[52px]"
-            onClick={() => setShowTripWizard(true)}
+        {/* Action Bar - Only show when there are trips (not in empty state) */}
+        {!isLoading && trips.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-8 sm:mb-10"
           >
-            <Sparkles className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-            Plan New Trip with Shasa
-          </Button>
+            {/* Plan New Trip Button - Modernized with better styling */}
+            <Button 
+              size="lg"
+              className="btn-primary-gradient border-0 text-base sm:text-lg group w-full sm:w-auto min-h-[56px] px-6 sm:px-8 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+              onClick={() => setShowTripWizard(true)}
+            >
+              <Sparkles className="w-5 h-5 mr-2 group-hover:animate-pulse group-hover:scale-110 transition-transform" />
+              Plan New Trip with Shasa
+            </Button>
 
-          {/* Sort Dropdown - Touch friendly */}
-          {trips.length > 0 && (
+            {/* Sort Dropdown - Enhanced styling */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 min-h-[48px] w-full sm:w-auto">
+                <Button variant="outline" className="gap-2 bg-white/5 backdrop-blur-sm border-white/10 text-white hover:bg-white/10 hover:border-white/20 min-h-[48px] w-full sm:w-auto transition-all duration-200">
                   <ArrowUpDown className="w-4 h-4" />
                   {getSortLabel(sortBy)}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-card border-white/10 z-50 bg-background">
+              <DropdownMenuContent className="glass-card border-white/10 z-50 bg-background backdrop-blur-xl">
                 <DropdownMenuItem 
                   onClick={() => setSortBy('newest')}
-                  className="gap-2 cursor-pointer min-h-[44px]"
+                  className="gap-2 cursor-pointer min-h-[44px] hover:bg-white/10 transition-colors"
                 >
                   <Clock className="w-4 h-4" />
                   Newest First
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setSortBy('oldest')}
-                  className="gap-2 cursor-pointer min-h-[44px]"
+                  className="gap-2 cursor-pointer min-h-[44px] hover:bg-white/10 transition-colors"
                 >
                   <Clock className="w-4 h-4 rotate-180" />
                   Oldest First
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setSortBy('upcoming')}
-                  className="gap-2 cursor-pointer min-h-[44px]"
+                  className="gap-2 cursor-pointer min-h-[44px] hover:bg-white/10 transition-colors"
                 >
                   <CalendarDays className="w-4 h-4" />
                   Upcoming Trips
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
 
-        {/* Trips Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
+        {/* Trips Grid - Modernized with better spacing */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
             {[...Array(6)].map((_, i) => (
               <TripCardSkeleton key={i} />
             ))}
@@ -232,7 +240,7 @@ const Dashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6 lg:gap-8"
           >
             <AnimatePresence mode="popLayout">
               {sortedTrips.map((trip, index) => (
@@ -246,6 +254,7 @@ const Dashboard = () => {
                     trip={trip} 
                     onDelete={handleDeleteTrip}
                     isDeleting={deletingTripId === trip.id}
+                    hasCompletedTrip={hasCompletedTrip}
                   />
                 </motion.div>
               ))}
