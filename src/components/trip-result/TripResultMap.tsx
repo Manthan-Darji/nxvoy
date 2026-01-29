@@ -72,8 +72,17 @@ const mapOptions = {
   ],
 };
 
+// Activity type colors
+const activityColors: Record<string, string> = {
+  transport: '#3b82f6',
+  food: '#f97316',
+  sightseeing: '#a855f7',
+  stay: '#22c55e',
+  activity: '#ec4899',
+};
+
 const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
-  const [center, setCenter] = useState(defaultCenter);
+  const [destinationCenter, setDestinationCenter] = useState<google.maps.LatLngLiteral | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<GeocodedActivity | null>(null);
   const [geocodedActivities, setGeocodedActivities] = useState<GeocodedActivity[]>([]);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -83,54 +92,74 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
   
   const { isLoaded, loadError } = useGoogleMaps();
 
-  // Geocode the destination to center the map
-  useEffect(() => {
-    if (!isLoaded || !destination) return;
-
-    const geocodeDestination = async () => {
-      const cacheKey = `destination:${destination}`;
-      if (geocodeCacheRef.current.has(cacheKey)) {
-        setCenter(geocodeCacheRef.current.get(cacheKey)!);
-        return;
-      }
-
-      try {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: destination }, (results, status) => {
-          if (status === 'OK' && results?.[0]) {
-            const newCenter = {
-              lat: results[0].geometry.location.lat(),
-              lng: results[0].geometry.location.lng(),
-            };
-            geocodeCacheRef.current.set(cacheKey, newCenter);
-            setCenter(newCenter);
+  // Use Places API to geocode a query - more reliable than Geocoder
+  const geocodeWithPlaces = useCallback((
+    service: google.maps.places.PlacesService,
+    query: string
+  ): Promise<google.maps.LatLngLiteral | null> => {
+    return new Promise((resolve) => {
+      service.findPlaceFromQuery(
+        {
+          query,
+          fields: ['geometry', 'name'],
+        },
+        (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry?.location) {
+            const location = results[0].geometry.location;
+            resolve({ lat: location.lat(), lng: location.lng() });
+          } else {
+            resolve(null);
           }
-        });
-      } catch (error) {
-        console.warn('Failed to geocode destination:', error);
-      }
-    };
+        }
+      );
+    });
+  }, []);
 
-    geocodeDestination();
-  }, [isLoaded, destination]);
+  // Geocode the destination using Places API
+  const geocodeDestination = useCallback(async (service: google.maps.places.PlacesService) => {
+    if (!destination) return;
+
+    const cacheKey = `destination:${destination.toLowerCase()}`;
+    if (geocodeCacheRef.current.has(cacheKey)) {
+      setDestinationCenter(geocodeCacheRef.current.get(cacheKey)!);
+      return;
+    }
+
+    // Try with ", India" suffix first for better accuracy
+    let position = await geocodeWithPlaces(service, `${destination}, India`);
+    
+    // Fallback to just destination name
+    if (!position) {
+      position = await geocodeWithPlaces(service, destination);
+    }
+
+    if (position) {
+      geocodeCacheRef.current.set(cacheKey, position);
+      setDestinationCenter(position);
+    }
+  }, [destination, geocodeWithPlaces]);
 
   // Geocode each activity location using Places API
-  const geocodeActivities = useCallback(async () => {
-    if (!mapRef.current || !activities.length || !destination) return;
+  const geocodeActivities = useCallback(async (service: google.maps.places.PlacesService) => {
+    if (!activities.length || !destination) return;
 
     setIsGeocoding(true);
     setGeocodingProgress(0);
 
-    const service = new google.maps.places.PlacesService(mapRef.current);
     const results: GeocodedActivity[] = [];
 
     for (let i = 0; i < activities.length; i++) {
       const activity = activities[i];
-      const searchQuery = activity.location_address 
-        ? `${activity.location_name}, ${activity.location_address}`
-        : `${activity.location_name}, ${destination}`;
       
-      const cacheKey = searchQuery.toLowerCase();
+      // Build search query - prefer full address, fallback to location name + destination
+      const searchQueries = [
+        activity.location_address ? `${activity.location_name}, ${activity.location_address}` : null,
+        `${activity.location_name}, ${destination}, India`,
+        `${activity.location_name}, ${destination}`,
+        activity.location_name,
+      ].filter(Boolean) as string[];
+
+      const cacheKey = searchQueries[0].toLowerCase();
       
       // Check cache first
       if (geocodeCacheRef.current.has(cacheKey)) {
@@ -143,74 +172,85 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
         continue;
       }
 
-      // Use Places API findPlaceFromQuery
-      try {
-        const position = await new Promise<google.maps.LatLngLiteral | null>((resolve) => {
-          service.findPlaceFromQuery(
-            {
-              query: searchQuery,
-              fields: ['geometry', 'name'],
-            },
-            (placeResults, status) => {
-              if (status === google.maps.places.PlacesServiceStatus.OK && placeResults?.[0]?.geometry?.location) {
-                const location = placeResults[0].geometry.location;
-                const pos = { lat: location.lat(), lng: location.lng() };
-                geocodeCacheRef.current.set(cacheKey, pos);
-                resolve(pos);
-              } else {
-                // Fallback: try with just location name
-                service.findPlaceFromQuery(
-                  {
-                    query: `${activity.location_name}, ${destination}`,
-                    fields: ['geometry', 'name'],
-                  },
-                  (fallbackResults, fallbackStatus) => {
-                    if (fallbackStatus === google.maps.places.PlacesServiceStatus.OK && fallbackResults?.[0]?.geometry?.location) {
-                      const location = fallbackResults[0].geometry.location;
-                      const pos = { lat: location.lat(), lng: location.lng() };
-                      geocodeCacheRef.current.set(cacheKey, pos);
-                      resolve(pos);
-                    } else {
-                      resolve(null);
-                    }
-                  }
-                );
-              }
-            }
-          );
-        });
-
-        results.push({
-          ...activity,
-          position,
-          index: i,
-        });
-      } catch (error) {
-        console.warn(`Failed to geocode activity "${activity.location_name}":`, error);
-        results.push({
-          ...activity,
-          position: null,
-          index: i,
-        });
+      // Try each search query until one works
+      let position: google.maps.LatLngLiteral | null = null;
+      for (const query of searchQueries) {
+        position = await geocodeWithPlaces(service, query);
+        if (position) {
+          geocodeCacheRef.current.set(cacheKey, position);
+          break;
+        }
       }
+
+      results.push({
+        ...activity,
+        position,
+        index: i,
+      });
 
       setGeocodingProgress(((i + 1) / activities.length) * 100);
       
       // Small delay to respect API rate limits
       if (i < activities.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 80));
       }
     }
 
     setGeocodedActivities(results);
     setIsGeocoding(false);
-  }, [activities, destination]);
 
-  // Trigger geocoding when map loads
+    // Auto-fit bounds to show all markers
+    if (mapRef.current && results.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      
+      // Include destination center
+      if (destinationCenter) {
+        bounds.extend(destinationCenter);
+      }
+      
+      // Include all activity positions
+      results.forEach(activity => {
+        if (activity.position) {
+          bounds.extend(activity.position);
+        }
+      });
+
+      // Only fit if we have valid bounds
+      if (!bounds.isEmpty()) {
+        mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+      }
+    }
+  }, [activities, destination, destinationCenter, geocodeWithPlaces]);
+
+  // Initialize geocoding when map loads
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    geocodeActivities();
-  }, [geocodeActivities]);
+    
+    const service = new google.maps.places.PlacesService(map);
+    
+    // Geocode destination first, then activities
+    geocodeDestination(service).then(() => {
+      geocodeActivities(service);
+    });
+  }, [geocodeDestination, geocodeActivities]);
+
+  // Update bounds when destination center changes
+  useEffect(() => {
+    if (mapRef.current && destinationCenter && geocodedActivities.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(destinationCenter);
+      
+      geocodedActivities.forEach(activity => {
+        if (activity.position) {
+          bounds.extend(activity.position);
+        }
+      });
+
+      if (!bounds.isEmpty()) {
+        mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+      }
+    }
+  }, [destinationCenter, geocodedActivities]);
 
   if (loadError) {
     return (
@@ -234,25 +274,6 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
     );
   }
 
-  const getMarkerIcon = (type: string) => {
-    const colors: Record<string, string> = {
-      transport: '#3b82f6',
-      food: '#f97316',
-      sightseeing: '#a855f7',
-      stay: '#22c55e',
-      activity: '#ec4899',
-    };
-    
-    return {
-      path: google.maps.SymbolPath.CIRCLE,
-      fillColor: colors[type] || '#6b7280',
-      fillOpacity: 1,
-      strokeWeight: 2,
-      strokeColor: '#ffffff',
-      scale: 12,
-    };
-  };
-
   // Filter activities that have valid positions
   const activitiesWithPositions = geocodedActivities.filter(a => a.position !== null);
 
@@ -260,31 +281,42 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
     <div className="relative w-full h-full">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
-        center={center}
+        center={destinationCenter || defaultCenter}
         zoom={12}
         options={mapOptions}
         onLoad={onMapLoad}
       >
-        {/* Destination center marker */}
-        <Marker
-          position={center}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: '#ef4444',
-            fillOpacity: 1,
-            strokeWeight: 3,
-            strokeColor: '#ffffff',
-            scale: 15,
-          }}
-          title={destination}
-        />
+        {/* Main destination marker - large red pin */}
+        {destinationCenter && (
+          <Marker
+            position={destinationCenter}
+            icon={{
+              path: 'M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 11.5C10.34 11.5 9 10.16 9 8.5S10.34 5.5 12 5.5S15 6.84 15 8.5S13.66 11.5 12 11.5Z',
+              fillColor: '#ef4444',
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: '#ffffff',
+              scale: 1.8,
+              anchor: new google.maps.Point(12, 24),
+            }}
+            title={destination}
+            zIndex={1000}
+          />
+        )}
 
-        {/* Activity markers with real geocoded positions */}
+        {/* Activity markers - numbered colored circles */}
         {activitiesWithPositions.map((activity) => (
           <Marker
             key={activity.index}
             position={activity.position!}
-            icon={getMarkerIcon(activity.type)}
+            icon={{
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: activityColors[activity.type] || '#6b7280',
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: '#ffffff',
+              scale: 10,
+            }}
             onClick={() => setSelectedActivity(activity)}
             label={{
               text: String(activity.index + 1),
@@ -292,6 +324,7 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
               fontSize: '10px',
               fontWeight: 'bold',
             }}
+            zIndex={activity.index + 1}
           />
         ))}
 
@@ -308,6 +341,11 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
               <p className="text-xs text-gray-600">
                 {selectedActivity.location_name}
               </p>
+              {selectedActivity.location_address && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {selectedActivity.location_address}
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 {selectedActivity.time}
               </p>
@@ -328,12 +366,22 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
         </div>
       )}
 
-      {/* Legend showing unmapped activities */}
-      {!isGeocoding && geocodedActivities.length > 0 && activitiesWithPositions.length < geocodedActivities.length && (
-        <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-2 text-xs text-muted-foreground">
-          <p>{activitiesWithPositions.length} of {geocodedActivities.length} locations mapped</p>
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 text-xs">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-4 h-4 flex items-center justify-center">
+            <svg width="12" height="16" viewBox="0 0 24 24" fill="#ef4444">
+              <path d="M12 0C7.31 0 3.5 3.81 3.5 8.5C3.5 14.88 12 24 12 24S20.5 14.88 20.5 8.5C20.5 3.81 16.69 0 12 0ZM12 11.5C10.34 11.5 9 10.16 9 8.5S10.34 5.5 12 5.5S15 6.84 15 8.5S13.66 11.5 12 11.5Z"/>
+            </svg>
+          </div>
+          <span className="text-muted-foreground">{destination}</span>
         </div>
-      )}
+        {!isGeocoding && geocodedActivities.length > 0 && (
+          <p className="text-muted-foreground">
+            {activitiesWithPositions.length} of {geocodedActivities.length} locations mapped
+          </p>
+        )}
+      </div>
     </div>
   );
 };
