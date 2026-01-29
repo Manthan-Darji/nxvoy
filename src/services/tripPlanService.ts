@@ -64,7 +64,7 @@ export async function generateTripPlan(
   console.log('[tripPlanService] Generating trip plan:', request);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute client timeout
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second client timeout
 
   try {
     const response = await fetch(`${BASE_URL}/functions/v1/generate-trip-plan`, {

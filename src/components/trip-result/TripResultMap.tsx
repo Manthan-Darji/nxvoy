@@ -224,6 +224,7 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
 
   // Initialize geocoding when map loads
   const onMapLoad = useCallback((map: google.maps.Map) => {
+    console.log('[TripResultMap] Map loaded, starting geocoding');
     mapRef.current = map;
     
     const service = new google.maps.places.PlacesService(map);
@@ -234,9 +235,25 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
     });
   }, [geocodeDestination, geocodeActivities]);
 
+  // Re-geocode when activities or destination change AFTER initial load
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+    
+    console.log('[TripResultMap] Props changed - activities:', activities.length, 'destination:', destination);
+    
+    const service = new google.maps.places.PlacesService(mapRef.current);
+    
+    // Re-geocode everything when data changes
+    geocodeDestination(service).then(() => {
+      geocodeActivities(service);
+    });
+  }, [activities, destination, isLoaded, geocodeDestination, geocodeActivities]);
+
   // Update bounds when destination center changes
   useEffect(() => {
     if (mapRef.current && destinationCenter && geocodedActivities.length > 0) {
+      console.log('[TripResultMap] Fitting bounds - destination:', destinationCenter, 'activities:', geocodedActivities.length);
+      
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(destinationCenter);
       
