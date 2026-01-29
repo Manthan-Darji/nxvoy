@@ -14,7 +14,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { generateTripPlan, HttpError } from '@/services/tripPlanService';
 import ProcessingState from './ProcessingState';
-import TripSuccessState from './TripSuccessState';
 import { searchIndianCities, INDIAN_CITIES } from '@/data/indianCities';
 
 interface TripData {
@@ -272,12 +271,10 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
   const [showOriginSuggestions, setShowOriginSuggestions] = useState(false);
   const [filteredCities, setFilteredCities] = useState<string[]>([]);
-  const [generatedTripId, setGeneratedTripId] = useState<string | null>(null);
   
   const [tripData, setTripData] = useState<TripData>({
     destination: '',
@@ -458,8 +455,16 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
       }
 
       console.log('[TripWizard] Trip saved with ID:', savedTrip.id);
-      setGeneratedTripId(savedTrip.id);
-      setIsSuccess(true);
+      
+      // IMMEDIATELY navigate to the trip result page - don't wait
+      setIsProcessing(false);
+      onClose();
+      navigate(`/trip/${savedTrip.id}`);
+      
+      toast({
+        title: 'Trip created! 🎉',
+        description: `Your trip to ${tripData.destination} is ready.`,
+      });
 
     } catch (error) {
       console.error('[TripWizard] Error generating trip:', error);
@@ -544,20 +549,6 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
 
   if (isProcessing) {
     return <ProcessingState destination={tripData.destination} budget={`${getCurrencySymbol()}${tripData.budget}`} />;
-  }
-
-  if (isSuccess) {
-    return (
-      <TripSuccessState 
-        tripData={{
-          ...tripData,
-          duration: getTripDuration(),
-          currencySymbol: getCurrencySymbol(),
-        }}
-        tripId={generatedTripId}
-        onClose={onClose} 
-      />
-    );
   }
 
   const stepVariants = {
