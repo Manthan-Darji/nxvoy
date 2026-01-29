@@ -6,6 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import ActiveCollaborators from './ActiveCollaborators';
+import { useDestinationPhoto } from '@/hooks/useDestinationPhoto';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface Activity {
   title: string;
@@ -218,9 +221,34 @@ const ItineraryHeader = ({ trip, totalCost, days = [], onShareClick }: Itinerary
   const budgetProgress = trip.budget ? Math.min((totalCost / trip.budget) * 100, 100) : 0;
   const isOverBudget = trip.budget ? totalCost > trip.budget : false;
 
+  // Fetch hero image - non-blocking, optional enhancement
+  const destinationStr = trip.destination || '';
+  const { photoUrl, isLoading } = useDestinationPhoto(destinationStr);
+
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-teal-500 text-white print:bg-blue-600 print:text-black">
-      <div className="container max-w-7xl mx-auto px-4 py-6">
+    <div className={cn(
+      "relative text-white print:bg-blue-600 print:text-black",
+      !photoUrl && "bg-gradient-to-r from-blue-600 to-teal-500"
+    )}>
+      {/* Hero Image Background - Optional overlay */}
+      {photoUrl && (
+        <>
+          <motion.img
+            src={photoUrl}
+            alt={destinationStr}
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-teal-500/80" />
+        </>
+      )}
+      
+      <div className="relative z-10 container max-w-7xl mx-auto px-4 py-6">
         {/* Back Button */}
         <Button
           variant="ghost"
