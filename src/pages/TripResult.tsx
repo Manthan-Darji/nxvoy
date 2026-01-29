@@ -3,14 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   MapPin, Calendar, ArrowLeft, Share2, Download, 
-  Wallet
+  Wallet, Bus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import TripResultTimeline from '@/components/trip-result/TripResultTimeline';
-import { DotLottiePlayer } from '@dotlottie/react-player';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface TripActivity {
@@ -56,6 +55,29 @@ interface TripData {
   status: string;
   trip_plan?: TripPlan;
 }
+
+// Animated bus component for loading state
+const AnimatedBus = ({ size = 'lg' }: { size?: 'sm' | 'lg' }) => {
+  const dimensions = size === 'lg' ? 'w-20 h-20' : 'w-12 h-12';
+  const iconSize = size === 'lg' ? 'w-10 h-10' : 'w-6 h-6';
+  
+  return (
+    <motion.div
+      className={`${dimensions} rounded-full bg-primary/20 flex items-center justify-center`}
+      animate={{ 
+        x: [0, 10, 0, -10, 0],
+        rotate: [0, 2, 0, -2, 0]
+      }}
+      transition={{ 
+        duration: 2, 
+        repeat: Infinity, 
+        ease: 'easeInOut' 
+      }}
+    >
+      <Bus className={`${iconSize} text-primary`} />
+    </motion.div>
+  );
+};
 
 const TripResult = () => {
   const { tripId } = useParams<{ tripId: string }>();
@@ -166,16 +188,11 @@ const TripResult = () => {
     return symbols[currency] || currency;
   };
 
-  // Loading state with bus animation
+  // Loading state with animated bus
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <DotLottiePlayer
-          src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie"
-          autoplay
-          loop
-          style={{ width: 200, height: 200 }}
-        />
+        <AnimatedBus size="lg" />
         <p className="text-muted-foreground animate-pulse">Loading your adventure...</p>
       </div>
     );
@@ -241,13 +258,8 @@ const TripResult = () => {
           <CardContent className="p-0">
             <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
               {/* Bus Animation - positioned on the right */}
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
-                <DotLottiePlayer
-                  src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie"
-                  autoplay
-                  loop
-                  style={{ width: 150, height: 150 }}
-                />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
+                <AnimatedBus size="sm" />
               </div>
               
               <div className="relative p-6 space-y-4">
