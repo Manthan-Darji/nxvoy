@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, InfoWindow, Marker } from '@react-google-maps/api';
 import { Loader2, MapPin, Navigation } from 'lucide-react';
 import { useGoogleMaps } from '@/context/GoogleMapsContext';
@@ -51,7 +51,7 @@ type ActivityMarker = {
   position: google.maps.LatLngLiteral;
 };
 
-const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
+const TripResultMap = React.forwardRef<HTMLDivElement, TripResultMapProps>(({ activities, destination }, forwardedRef) => {
   const { isLoaded, loadError } = useGoogleMaps();
 
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -229,7 +229,7 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={forwardedRef} className="relative w-full h-full">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={mapCenter}
@@ -287,6 +287,8 @@ const TripResultMap = ({ activities, destination }: TripResultMapProps) => {
       )}
     </div>
   );
-};
+});
+
+TripResultMap.displayName = 'TripResultMap';
 
 export default TripResultMap;

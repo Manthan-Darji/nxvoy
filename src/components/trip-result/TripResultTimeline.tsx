@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Bus, Plane, Train, Utensils, Bed, Camera, ShoppingBag,
@@ -71,19 +72,19 @@ const getActivityColor = (type: string) => {
   }
 };
 
-const TripResultTimeline = ({ 
+const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelineProps>(({ 
   itinerary, 
   activeDay, 
   onDayChange,
   currencySymbol 
-}: TripResultTimelineProps) => {
+}, ref) => {
   const currentDay = itinerary.find(d => d.day === activeDay) || itinerary[0];
 
   // Calculate day total
   const dayTotal = currentDay?.activities.reduce((sum, act) => sum + (act.cost || 0), 0) || 0;
 
   return (
-    <div className="space-y-6">
+    <div ref={ref} className="space-y-6">
       {/* Day Selector */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {itinerary.map((day) => (
@@ -229,6 +230,8 @@ const TripResultTimeline = ({
       </div>
     </div>
   );
-};
+});
+
+TripResultTimeline.displayName = 'TripResultTimeline';
 
 export default TripResultTimeline;
