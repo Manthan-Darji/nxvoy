@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -68,19 +68,6 @@ const TripResult = () => {
   const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(1);
   const [showMap, setShowMap] = useState(false);
-  
-  const lottieRef = useRef<HTMLDivElement>(null);
-
-  // Load dotlottie-wc script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js';
-    script.type = 'module';
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
 
   useEffect(() => {
     fetchTrip();
@@ -108,15 +95,12 @@ const TripResult = () => {
         return;
       }
 
-      // Parse trip plan from notes if it exists
       let tripPlan: TripPlan | undefined;
       if (data.notes) {
         try {
           const parsed = JSON.parse(data.notes);
           if (parsed && parsed.trip_title && Array.isArray(parsed.itinerary)) {
             tripPlan = parsed;
-          } else {
-            console.warn('[TripResult] Notes exists but is not a valid trip plan');
           }
         } catch (parseError) {
           console.error('[TripResult] Failed to parse trip notes:', parseError);
@@ -126,7 +110,7 @@ const TripResult = () => {
       if (!tripPlan) {
         toast({
           title: 'Trip data incomplete',
-          description: 'This trip\'s itinerary could not be loaded. Please try generating a new trip.',
+          description: 'This trip\'s itinerary could not be loaded.',
           variant: 'destructive',
         });
         navigate('/dashboard');
@@ -148,55 +132,36 @@ const TripResult = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(url);
-      toast({
-        title: 'Link copied! 🎒',
-        description: 'Share this link with your travel buddies!',
-      });
+      await navigator.clipboard.writeText(window.location.href);
+      toast({ title: 'Link copied! 🎒', description: 'Share this link with your travel buddies!' });
     } catch {
-      toast({
-        title: 'Unable to copy',
-        description: 'Please copy the URL manually',
-        variant: 'destructive',
-      });
+      toast({ title: 'Unable to copy', description: 'Please copy the URL manually', variant: 'destructive' });
     }
   };
 
   const handleDownload = () => {
-    toast({
-      title: 'Coming soon! 📄',
-      description: 'PDF download will be available soon.',
-    });
+    toast({ title: 'Coming soon! 📄', description: 'PDF download will be available soon.' });
   };
 
   const getCurrencySymbol = (currency: string) => {
-    const symbols: Record<string, string> = {
-      INR: '₹',
-      USD: '$',
-      EUR: '€',
-      GBP: '£',
-      AED: 'د.إ',
-    };
+    const symbols: Record<string, string> = { INR: '₹', USD: '$', EUR: '€', GBP: '£', AED: 'د.إ' };
     return symbols[currency] || currency;
   };
 
-  // Get activities for current day (for map)
   const getCurrentDayActivities = () => {
     if (!trip?.trip_plan) return [];
     const currentDay = trip.trip_plan.itinerary.find(d => d.day === activeDay);
     return currentDay?.activities || [];
   };
 
-  // Loading state with bus Lottie animation
+  // Loading state with Lottie animation
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <div 
-          ref={lottieRef}
           dangerouslySetInnerHTML={{
-            __html: `<dotlottie-wc src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie" style="width: 200px; height: 200px" autoplay loop></dotlottie-wc>`
+            __html: `<dotlottie-wc src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie" style="width: 180px; height: 180px" autoplay loop></dotlottie-wc>`
           }}
         />
         <p className="text-muted-foreground animate-pulse">Loading your adventure...</p>
@@ -220,15 +185,10 @@ const TripResult = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sticky Header */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-            className="rounded-full"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-full">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           
@@ -237,7 +197,6 @@ const TripResult = () => {
           </h1>
 
           <div className="flex gap-1">
-            {/* Mobile map toggle */}
             {isMobile && (
               <Button
                 variant={showMap ? "default" : "ghost"}
@@ -248,100 +207,90 @@ const TripResult = () => {
                 <MapIcon className="w-4 h-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleShare}
-              className="rounded-full"
-            >
+            <Button variant="ghost" size="icon" onClick={handleShare} className="rounded-full">
               <Share2 className="w-4 h-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDownload}
-              className="rounded-full"
-            >
+            <Button variant="ghost" size="icon" onClick={handleDownload} className="rounded-full">
               <Download className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content - Split Layout */}
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-57px)]">
-        {/* Left Column - Itinerary (Scrollable) */}
-        <div className={`
-          w-full lg:w-[55%] xl:w-[50%] 
-          ${isMobile && showMap ? 'hidden' : 'block'}
-          overflow-y-auto
-        `}>
-          <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-            {/* Trip Info Card with Bus Animation */}
-            <Card className="overflow-hidden">
+      {/* Main Content - 8/4 Grid Layout */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column - Itinerary (8 cols) */}
+          <div className={`lg:col-span-8 ${isMobile && showMap ? 'hidden' : 'block'}`}>
+            {/* Trip Header Card with Bus Animation */}
+            <Card className="overflow-hidden mb-6">
               <CardContent className="p-0">
                 <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-                  {/* Small Bus Animation - decorative in header */}
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none hidden sm:block">
-                    <div 
-                      dangerouslySetInnerHTML={{
-                        __html: `<dotlottie-wc src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie" style="width: 100px; height: 100px" autoplay loop></dotlottie-wc>`
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="relative p-6 space-y-4">
-                    {/* Destination & Dates */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-foreground">
-                        <MapPin className="w-5 h-5 text-primary" />
-                        <span className="text-xl font-bold">{trip.destination}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm">
-                          {trip.start_date && trip.end_date && (
-                            <>
-                              {format(new Date(trip.start_date), 'MMM d')} - {format(new Date(trip.end_date), 'MMM d, yyyy')}
-                            </>
-                          )}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
-                          {trip_plan.itinerary.length} days
-                        </span>
-                      </div>
+                  <div className="flex items-start gap-4 p-6">
+                    {/* Bus Animation - Small & Integrated */}
+                    <div className="flex-shrink-0 hidden sm:block">
+                      <div 
+                        dangerouslySetInnerHTML={{
+                          __html: `<dotlottie-wc src="https://lottie.host/51b77627-2c12-4acd-85b0-bb49f2186269/FjOvjBqyGn.lottie" style="width: 100px; height: 100px" autoplay loop></dotlottie-wc>`
+                        }}
+                      />
                     </div>
 
-                    {/* Budget Summary */}
-                    <div className="flex items-center gap-4 pt-2">
-                      <div className="flex items-center gap-2">
-                        <Wallet className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <div className="text-xs text-muted-foreground">Est. Cost</div>
-                          <div className="font-mono font-bold text-foreground">
-                            {currencySymbol}{trip_plan.total_estimated_cost.toLocaleString()}
+                    {/* Trip Info */}
+                    <div className="flex-1 space-y-3">
+                      {/* Destination & Dates */}
+                      <div>
+                        <div className="flex items-center gap-2 text-foreground">
+                          <MapPin className="w-5 h-5 text-primary" />
+                          <span className="text-xl font-bold">{trip.destination}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-sm">
+                            {trip.start_date && trip.end_date && (
+                              <>
+                                {format(new Date(trip.start_date), 'MMM d')} - {format(new Date(trip.end_date), 'MMM d, yyyy')}
+                              </>
+                            )}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
+                            {trip_plan.itinerary.length} days
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Budget Summary */}
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <div className="text-xs text-muted-foreground">Est. Cost</div>
+                            <div className="font-mono font-bold text-foreground">
+                              {currencySymbol}{trip_plan.total_estimated_cost.toLocaleString()}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="h-8 w-px bg-border" />
-                      
-                      <div>
-                        <div className="text-xs text-muted-foreground">Budget</div>
-                        <div className="font-mono font-bold text-foreground">
-                          {currencySymbol}{trip.budget?.toLocaleString()}
+                        
+                        <div className="h-8 w-px bg-border hidden sm:block" />
+                        
+                        <div>
+                          <div className="text-xs text-muted-foreground">Budget</div>
+                          <div className="font-mono font-bold text-foreground">
+                            {currencySymbol}{trip.budget?.toLocaleString()}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className={`ml-auto px-3 py-1.5 rounded-full text-xs font-medium ${
-                        budgetStatus === 'under' 
-                          ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
-                          : 'bg-red-500/20 text-red-600 dark:text-red-400'
-                      }`}>
-                        {budgetStatus === 'under' 
-                          ? `${currencySymbol}${Math.abs(budgetDiff).toLocaleString()} under ✓`
-                          : `${currencySymbol}${Math.abs(budgetDiff).toLocaleString()} over`
-                        }
+                        
+                        <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                          budgetStatus === 'under' 
+                            ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
+                            : 'bg-red-500/20 text-red-600 dark:text-red-400'
+                        }`}>
+                          {budgetStatus === 'under' 
+                            ? `${currencySymbol}${Math.abs(budgetDiff).toLocaleString()} under ✓`
+                            : `${currencySymbol}${Math.abs(budgetDiff).toLocaleString()} over`
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -349,7 +298,7 @@ const TripResult = () => {
               </CardContent>
             </Card>
 
-            {/* Timeline Section */}
+            {/* Timeline */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -362,23 +311,37 @@ const TripResult = () => {
                 currencySymbol={currencySymbol}
               />
             </motion.div>
-          </main>
-        </div>
+          </div>
 
-        {/* Right Column - Sticky Map */}
-        <div className={`
-          w-full lg:w-[45%] xl:w-[50%]
-          ${isMobile && !showMap ? 'hidden' : 'block'}
-          lg:sticky lg:top-[57px] lg:h-[calc(100vh-57px)]
-          h-[60vh] lg:h-auto
-          border-l border-border
-        `}>
-          <TripResultMap
-            activities={getCurrentDayActivities()}
-            destination={trip.destination}
-          />
+          {/* Right Column - Sticky Map Card (4 cols) */}
+          <div className={`lg:col-span-4 ${isMobile && !showMap ? 'hidden' : 'block'}`}>
+            <div className="lg:sticky lg:top-20">
+              <Card className="overflow-hidden rounded-xl shadow-xl">
+                <CardContent className="p-0">
+                  <div className="h-[400px] lg:h-[500px]">
+                    <TripResultMap
+                      activities={getCurrentDayActivities()}
+                      destination={trip.destination}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Map Legend */}
+              <div className="mt-3 p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span>Destination</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <span>Day {activeDay} Activities</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
