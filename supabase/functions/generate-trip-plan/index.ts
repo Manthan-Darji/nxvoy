@@ -5,44 +5,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are Shasa, an expert Indian travel agent with deep knowledge of transportation (buses, trains, flights), hotels, restaurants, and attractions across India and international destinations.
+const SYSTEM_PROMPT = `You are Shasa, an expert Indian travel agent. Return ONLY valid JSON - no markdown, no explanations.
 
-CRITICAL INSTRUCTIONS:
-1. Return ONLY valid JSON - no markdown, no explanations, no text before or after the JSON.
-2. Your response must be parseable by JSON.parse().
-3. Use REALISTIC current prices for Indian buses (GSRTC, RSRTC, private operators like RedBus), trains, hotels, and restaurants.
-4. STRICTLY respect the user's budget - if the budget is too low, suggest budget-friendly options.
-5. Include actual transport options (bus names, routes, approximate timings).
-6. For each activity, specify the type: "transport", "food", "sightseeing", "stay", or "activity".
+CRITICAL RULES:
+1. Return parseable JSON only
+2. Use realistic Indian prices (buses ₹300-1500, hotels ₹800-3000/night, meals ₹100-500)
+3. STRICTLY respect budget
+4. Include 3-4 activities per day (morning, afternoon, evening + meals)
+5. For location_address, ALWAYS include the full address with city name for accurate mapping
 
-JSON SCHEMA (follow exactly):
+JSON SCHEMA:
 {
-  "trip_title": "string (e.g., '5 Days in Goa')",
+  "trip_title": "string",
   "total_estimated_cost": number,
-  "currency": "string (INR, USD, etc.)",
+  "currency": "INR",
   "budget_status": "within_budget" | "over_budget" | "under_budget",
-  "budget_message": "string (friendly message about budget)",
+  "budget_message": "string",
   "itinerary": [
     {
       "day": number,
       "date": "YYYY-MM-DD",
-      "title": "string (e.g., 'Arrival & Beach Day')",
+      "title": "string",
       "activities": [
         {
           "time": "HH:MM AM/PM",
           "activity": "string",
-          "location_name": "string",
-          "location_address": "string (optional, for mapping)",
+          "location_name": "string (e.g., Gateway of India)",
+          "location_address": "string (FULL address with city, e.g., Apollo Bandar, Colaba, Mumbai, Maharashtra 400001)",
           "cost": number,
           "type": "transport" | "food" | "sightseeing" | "stay" | "activity",
-          "duration_minutes": number,
-          "notes": "string (optional tips)",
-          "transport_details": {
-            "provider": "string (e.g., 'GSRTC Volvo')",
-            "from": "string",
-            "to": "string",
-            "booking_link": "string (optional)"
-          }
+          "duration_minutes": number
         }
       ]
     }
@@ -84,42 +76,31 @@ serve(async (req) => {
       dates.push(date.toISOString().split('T')[0]);
     }
 
-    // Build the prompt
-    const vibesText = preferences && preferences.length > 0 
-      ? preferences.join(', ') 
-      : 'general sightseeing, balanced activities';
-
-    const activitiesPerDay = days <= 4 ? '4-6' : days <= 7 ? '3-5' : '3-4';
-    // Keep responses bounded; large token budgets can encourage long outputs and slower generations.
-    const maxTokens = Math.min(9000, 1200 * days + 1500);
-
-    const prompt = `Create a detailed ${days}-day trip itinerary:
-
-FROM: ${origin}
-TO: ${destination}
-DATES: ${startDate} to ${endDate}
-BUDGET: ${currency} ${budget} (total for entire trip)
-TRAVEL STYLE: ${vibesText}
-
-REQUIREMENTS:
-1. Day 1 MUST include transport from ${origin} to ${destination} (bus/train/flight based on distance and budget).
-2. Last day should include return transport to ${origin}.
-3. Include realistic costs in ${currency}:
-   - Inter-city buses: ₹300-1500 depending on AC/sleeper
-   - Hotels: ₹800-3000/night for budget-mid range
-   - Meals: ₹100-500 per meal
-   - Local transport: ₹50-300 per ride
-4. Each day should have ${activitiesPerDay} activities covering morning, afternoon, and evening.
-5. Include at least 2-3 meals per day.
-6. Ensure total cost stays within budget of ${currency} ${budget}.
-
-Generate realistic, actionable itinerary with real place names and accurate pricing for India.`;
-
-    console.log("[generate-trip-plan] Calling AI gateway...");
+    // Build concise prompt
+    const vibesText = preferences?.length > 0 ? preferences.join(', ') : 'general sightseeing';
     
-     // Create abort controller for timeout (keep bounded for better UX)
+    // Reduced token budget for faster response
+    const maxTokens = Math.min(6000, 1000 * days + 1000);
+
+    const prompt = `Create a ${days}-day trip from ${origin} to ${destination}.
+Dates: ${startDate} to ${endDate}
+Budget: ${currency} ${budget}
+Style: ${vibesText}
+
+Requirements:
+- Day 1: Include transport from ${origin} to ${destination}
+- Last day: Include return transport
+- 3-4 activities per day including 2 meals
+- Include FULL addresses with city name in location_address for accurate mapping
+- Stay within budget of ${currency} ${budget}
+
+Be concise. Generate realistic itinerary with real places.`;
+
+    console.log("[generate-trip-plan] Calling AI gateway with optimized settings...");
+    
+    // Shorter timeout for better UX
     const controller = new AbortController();
-     const timeoutId = setTimeout(() => controller.abort(), 75000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -129,13 +110,12 @@ Generate realistic, actionable itinerary with real place names and accurate pric
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Faster + more consistent structured output than preview models
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: prompt },
           ],
-          temperature: 0.4,
+          temperature: 0.3,
           max_tokens: maxTokens,
         }),
         signal: controller.signal,
@@ -174,7 +154,6 @@ Generate realistic, actionable itinerary with real place names and accurate pric
       const content = data.choices?.[0]?.message?.content || "";
       
       console.log("[generate-trip-plan] Raw response length:", content.length);
-      console.log("[generate-trip-plan] Raw response preview:", content.substring(0, 500));
 
       // Parse JSON from response
       let tripPlan;
@@ -186,7 +165,6 @@ Generate realistic, actionable itinerary with real place names and accurate pric
           const codeBlockMatch = cleanJson.match(/```(?:json)?\s*([\s\S]*?)```/);
           if (codeBlockMatch) {
             cleanJson = codeBlockMatch[1].trim();
-            console.log("[generate-trip-plan] Extracted from markdown code block");
           }
         }
         
@@ -197,25 +175,23 @@ Generate realistic, actionable itinerary with real place names and accurate pric
           cleanJson = cleanJson.substring(jsonStartIndex, jsonEndIndex + 1);
         }
         
-        // Validate JSON structure before parsing
+        // Validate JSON structure
         const openBraces = (cleanJson.match(/{/g) || []).length;
         const closeBraces = (cleanJson.match(/}/g) || []).length;
         
         if (openBraces !== closeBraces) {
-          console.error("[generate-trip-plan] JSON brace mismatch - open:", openBraces, "close:", closeBraces);
+          console.error("[generate-trip-plan] JSON brace mismatch");
           throw new Error("Incomplete JSON response");
         }
         
-        console.log("[generate-trip-plan] Parsing JSON of length:", cleanJson.length);
         tripPlan = JSON.parse(cleanJson);
         
         // Validate required fields
         if (!tripPlan.trip_title || !tripPlan.itinerary || !Array.isArray(tripPlan.itinerary)) {
-          console.error("[generate-trip-plan] Invalid structure - missing required fields");
           throw new Error("Invalid trip plan structure");
         }
         
-        // Ensure dates are properly set
+        // Ensure dates are set
         tripPlan.itinerary = tripPlan.itinerary.map((day: any, index: number) => ({
           ...day,
           day: day.day || index + 1,
@@ -223,24 +199,16 @@ Generate realistic, actionable itinerary with real place names and accurate pric
         }));
         
         console.log("[generate-trip-plan] Successfully parsed", tripPlan.itinerary.length, "days");
-        console.log("[generate-trip-plan] Total estimated cost:", tripPlan.total_estimated_cost);
         
       } catch (parseError) {
         console.error("[generate-trip-plan] Parse error:", parseError);
-        console.error("[generate-trip-plan] Failed content:", content.substring(0, 1000));
         return new Response(
           JSON.stringify({ 
             error: "Failed to parse trip plan", 
-            details: String(parseError),
             hint: "AI response was malformed. Please try again."
           }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
-      }
-
-      // Check if budget is too low
-      if (tripPlan.budget_status === 'over_budget') {
-        console.log("[generate-trip-plan] Warning: Trip exceeds budget");
       }
 
       console.log("[generate-trip-plan] Returning successful response");
@@ -251,9 +219,9 @@ Generate realistic, actionable itinerary with real place names and accurate pric
     } catch (fetchError: unknown) {
       clearTimeout(timeoutId);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        console.error("[generate-trip-plan] Request timed out after 75 seconds");
+        console.error("[generate-trip-plan] Request timed out");
         return new Response(
-          JSON.stringify({ error: "Request timed out", hint: "The trip is complex. Please try with fewer days or simpler preferences." }),
+          JSON.stringify({ error: "Request timed out", hint: "Please try with a shorter trip or simpler preferences." }),
           { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
