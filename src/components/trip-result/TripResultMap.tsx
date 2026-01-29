@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GoogleMap, InfoWindow, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker, OverlayView } from '@react-google-maps/api';
 import { Loader2, MapPin, Navigation } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useGoogleMaps } from '@/context/GoogleMapsContext';
 
 interface TripActivity {
@@ -17,9 +19,10 @@ interface TripResultMapProps {
   destination: string;
 }
 
-const mapContainerStyle = {
+const mapContainerStyle: React.CSSProperties = {
   width: '100%',
   height: '100%',
+  minHeight: 400,
 };
 
 const defaultCenter = {
@@ -59,8 +62,7 @@ const TripResultMap = React.forwardRef<HTMLDivElement, TripResultMapProps>(({ ac
   const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
   const [mainPin, setMainPin] = useState<google.maps.LatLngLiteral | null>(null);
   const [activityPins, setActivityPins] = useState<ActivityMarker[]>([]);
-  const [hoveredActivity, setHoveredActivity] = useState<ActivityMarker | null>(null);
-  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isResolvingPlaces, setIsResolvingPlaces] = useState(false);
 
   const getHslToken = useCallback((token: string, fallback: string) => {
     try {
@@ -74,6 +76,8 @@ const TripResultMap = React.forwardRef<HTMLDivElement, TripResultMapProps>(({ ac
 
   const activityDotFill = useMemo(() => getHslToken('--primary', '#3b82f6'), [getHslToken]);
   const activityDotStroke = useMemo(() => getHslToken('--primary-foreground', '#ffffff'), [getHslToken]);
+  const cardBg = useMemo(() => getHslToken('--background', '#0b0b12'), [getHslToken]);
+  const cardFg = useMemo(() => getHslToken('--foreground', '#ffffff'), [getHslToken]);
 
   const mainMarkerIcon = useMemo<google.maps.Icon | undefined>(() => {
     // Standard Google pin icon (scaled larger)
@@ -92,119 +96,163 @@ const TripResultMap = React.forwardRef<HTMLDivElement, TripResultMapProps>(({ ac
     return trimmed.includes(',') ? trimmed : `${trimmed}, India`;
   }, [destination]);
 
-  const geocodeAddress = useCallback(
-    (geocoder: google.maps.Geocoder, address: string): Promise<google.maps.LatLngLiteral | null> => {
-      console.log('Geocoding address:', address);
-      return new Promise((resolve) => {
-        try {
-          geocoder.geocode({ address }, (results, status) => {
-            if (status === google.maps.GeocoderStatus.OK && results?.[0]?.geometry?.location) {
-              const loc = results[0].geometry.location;
-              resolve({ lat: loc.lat(), lng: loc.lng() });
-              return;
-            }
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
 
-            // ZERO_RESULTS / OVER_QUERY_LIMIT / REQUEST_DENIED etc.
-            resolve(null);
-          });
+  const findPlaceLatLng = useCallback(
+    async (placesService: google.maps.places.PlacesService, query: string): Promise<google.maps.LatLngLiteral | null> => {
+      const address = query.trim();
+      if (!address) return null;
+
+      console.log('Geocoding address:', address);
+
+      return new Promise((resolve, reject) => {
+        try {
+          placesService.findPlaceFromQuery(
+            {
+              query: address,
+              fields: ['geometry', 'name'],
+            },
+            (results, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry?.location) {
+                const loc = results[0].geometry.location;
+                resolve({ lat: loc.lat(), lng: loc.lng() });
+                return;
+              }
+
+              // If key restrictions are wrong, Google often returns REQUEST_DENIED.
+              if (status === google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+                reject(new Error('REQUEST_DENIED'));
+                return;
+              }
+
+              resolve(null);
+            }
+          );
         } catch (err) {
-          console.warn('[TripResultMap] Geocoding threw error for:', address, err);
-          resolve(null);
+          reject(err);
         }
       });
     },
     []
   );
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
-
-  // Core logic: Geocode destination & activities when props change.
+  // Core logic: Resolve destination & activities via Places when props change.
   useEffect(() => {
     if (!isLoaded) return;
     if (!mapRef.current) return;
-    if (!destinationQuery) return;
 
-    console.log('Map received locations:', { destination, activities });
+    const trimmedDestination = destination?.trim() ?? '';
+    if (!trimmedDestination) return;
+
+    console.log('Map received locations:', { destination: trimmedDestination, activities });
 
     const map = mapRef.current;
-    const geocoder = new google.maps.Geocoder();
+    const placesService = new google.maps.places.PlacesService(map);
     let cancelled = false;
 
     const run = async () => {
-      setIsGeocoding(true);
-      setHoveredActivity(null);
+      setIsResolvingPlaces(true);
       setActivityPins([]);
       setMainPin(null);
 
       const bounds = new google.maps.LatLngBounds();
 
-      // Step A: Main pin
-      let mainCoords = await geocodeAddress(geocoder, destinationQuery);
-      if (!mainCoords && destinationQuery !== destination) {
-        mainCoords = await geocodeAddress(geocoder, destination);
-      }
+      try {
+        // Step A: Destination pin
+        let mainCoords: google.maps.LatLngLiteral | null = null;
+        try {
+          mainCoords = await findPlaceLatLng(placesService, destinationQuery);
+        } catch (err) {
+          // Re-throw for outer error handler
+          throw err;
+        }
 
-      if (cancelled) return;
-
-      if (mainCoords) {
-        setMainPin(mainCoords);
-        setMapCenter(mainCoords);
-        bounds.extend(mainCoords);
-      } else {
-        console.warn('[TripResultMap] Could not geocode destination:', destinationQuery);
-      }
-
-      // Step B: Activity pins
-      const pins: ActivityMarker[] = [];
-      const baseDestinationForActivities = destinationQuery || destination;
-
-      for (let i = 0; i < activities.length; i++) {
-        const a = activities[i];
-        const addr = `${a.location_name}, ${baseDestinationForActivities}`;
-        const coords = await geocodeAddress(geocoder, addr);
+        if (!mainCoords && destinationQuery !== trimmedDestination) {
+          // fallback: raw destination string
+          mainCoords = await findPlaceLatLng(placesService, trimmedDestination);
+        }
 
         if (cancelled) return;
 
-        if (coords) {
-          pins.push({ index: i, name: a.activity || a.location_name, position: coords });
-          bounds.extend(coords);
+        if (mainCoords) {
+          setMainPin(mainCoords);
+          setMapCenter(mainCoords);
+          bounds.extend(mainCoords);
         } else {
-          console.warn('Location not found:', addr);
+          // Never blank: fallback to India center
+          toast.warning('Could not find destination');
+          setMapCenter(defaultCenter);
+          map.setCenter(defaultCenter);
+          map.setZoom(4);
+          bounds.extend(defaultCenter);
         }
+
+        // Step B: Activity pins
+        const pins: ActivityMarker[] = [];
+
+        for (let i = 0; i < (activities?.length ?? 0); i++) {
+          const a = activities[i];
+          const name = a?.activity || a?.location_name || `Stop ${i + 1}`;
+          const locationName = (a?.location_name ?? '').trim();
+          if (!locationName) continue;
+
+          // Places strategy: try spot name alone first, then add destination context.
+          let coords = await findPlaceLatLng(placesService, locationName);
+          if (!coords) {
+            coords = await findPlaceLatLng(placesService, `${locationName}, ${destinationQuery}`);
+          }
+
+          if (cancelled) return;
+
+          if (coords) {
+            pins.push({ index: i, name, position: coords });
+            bounds.extend(coords);
+          } else {
+            console.warn('Location not found:', locationName);
+          }
+        }
+
+        if (cancelled) return;
+
+        setActivityPins(pins);
+
+        // Step C: View fix
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds);
+          map.panToBounds(bounds);
+        } else if (mainCoords) {
+          map.setCenter(mainCoords);
+          map.setZoom(12);
+        } else {
+          map.setCenter(defaultCenter);
+          map.setZoom(4);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[TripResultMap] Places resolution failed:', err);
+
+        if (msg.includes('403') || msg.includes('REQUEST_DENIED')) {
+          toast.error('Map Error: Please check API Key restrictions in Google Cloud.');
+        } else {
+          toast.error('Map Error: Failed to load map locations.');
+        }
+
+        // Ensure map is still usable
+        map.setCenter(mapCenter ?? defaultCenter);
+        map.setZoom(mapCenter === defaultCenter ? 4 : 12);
+      } finally {
+        if (!cancelled) setIsResolvingPlaces(false);
       }
-
-      if (cancelled) return;
-
-      setActivityPins(pins);
-
-      // Step C: View fix
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds);
-        map.panToBounds(bounds);
-      } else if (mainCoords) {
-        // Requirement: never blank; at least center on main destination
-        map.setCenter(mainCoords);
-        map.setZoom(12);
-      } else {
-        // Worst-case fallback
-        map.setCenter(defaultCenter);
-        map.setZoom(4);
-      }
-
-      setIsGeocoding(false);
     };
 
-    run().catch((err) => {
-      console.error('[TripResultMap] Geocoding run failed:', err);
-      setIsGeocoding(false);
-    });
+    run();
 
     return () => {
       cancelled = true;
     };
-  }, [activities, destination, destinationQuery, geocodeAddress, isLoaded]);
+  }, [activities, destination, destinationQuery, findPlaceLatLng, isLoaded, mapCenter]);
 
   if (loadError) {
     return (
@@ -229,55 +277,56 @@ const TripResultMap = React.forwardRef<HTMLDivElement, TripResultMapProps>(({ ac
   }
 
   return (
-    <div ref={forwardedRef} className="relative w-full h-full">
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={mapCenter}
-        zoom={mapCenter === defaultCenter ? 4 : 12}
-        options={mapOptions}
-        onLoad={onMapLoad}
-      >
-        {/* Main destination marker - large red pin */}
-        {mainPin && (
-          <Marker position={mainPin} title={destination} icon={mainMarkerIcon} zIndex={1000} />
-        )}
+    <div ref={forwardedRef} className="relative w-full h-full min-h-[400px]">
+      <TooltipProvider delayDuration={150}>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={mapCenter}
+          zoom={mapCenter === defaultCenter ? 4 : 12}
+          options={mapOptions}
+          onLoad={onMapLoad}
+        >
+          {/* Main destination marker - large red pin */}
+          {mainPin && <Marker position={mainPin} title={destination} icon={mainMarkerIcon} zIndex={1000} />}
 
-        {/* Activity markers - small blue dots */}
-        {activityPins.map((pin) => (
-          <Marker
-            key={pin.index}
-            position={pin.position}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: activityDotFill,
-              fillOpacity: 0.95,
-              strokeColor: activityDotStroke,
-              strokeOpacity: 1,
-              strokeWeight: 2,
-              scale: 7,
-            }}
-            onMouseOver={() => setHoveredActivity(pin)}
-            onMouseOut={() => setHoveredActivity((prev) => (prev?.index === pin.index ? null : prev))}
-            zIndex={pin.index + 1}
-          />
-        ))}
+          {/* Activity markers - HTML overlay so TooltipTrigger can safely attach refs */}
+          {activityPins.map((pin) => (
+            <OverlayView
+              key={pin.index}
+              position={pin.position}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* CRITICAL: The div absorbs the ref from TooltipTrigger */}
+                  <div
+                    className="cursor-pointer rounded-full shadow-lg"
+                    style={{
+                      width: 14,
+                      height: 14,
+                      background: activityDotFill,
+                      border: `2px solid ${activityDotStroke}`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                    aria-label={pin.name}
+                    role="button"
+                  />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  sideOffset={8}
+                  style={{ background: cardBg, color: cardFg, borderColor: 'transparent' }}
+                >
+                  <span className="text-xs font-medium">{pin.name}</span>
+                </TooltipContent>
+              </Tooltip>
+            </OverlayView>
+          ))}
+        </GoogleMap>
+      </TooltipProvider>
 
-        {/* Hover tooltip */}
-        {hoveredActivity && (
-          <InfoWindow
-            position={hoveredActivity.position}
-            options={{ disableAutoPan: true }}
-            onCloseClick={() => setHoveredActivity(null)}
-          >
-            <div className="px-2 py-1">
-              <p className="text-xs font-medium text-foreground">{hoveredActivity.name}</p>
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
-
-      {/* Geocoding progress overlay */}
-      {isGeocoding && (
+      {/* Progress overlay */}
+      {isResolvingPlaces && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-primary" />
