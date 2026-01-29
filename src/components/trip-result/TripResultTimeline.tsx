@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bus, Plane, Train, Utensils, Bed, Camera, ShoppingBag,
   Clock, MapPin, ChevronRight, ExternalLink
@@ -82,6 +82,18 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
 
   // Calculate day total
   const dayTotal = currentDay?.activities.reduce((sum, act) => sum + (act.cost || 0), 0) || 0;
+  
+  // Get category label for display
+  const getCategoryLabel = (type: string) => {
+    switch (type) {
+      case 'transport': return 'Transport';
+      case 'food': return 'Food & Dining';
+      case 'sightseeing': return 'Sightseeing';
+      case 'stay': return 'Accommodation';
+      case 'activity': return 'Activity';
+      default: return 'Other';
+    }
+  };
 
   return (
     <div ref={ref} className="space-y-6">
@@ -133,19 +145,25 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
         {/* Timeline line */}
         <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
 
-        <div className="space-y-4">
-          {currentDay?.activities.map((activity, index) => {
-            const Icon = getActivityIcon(activity.type);
-            const colorClass = getActivityColor(activity.type);
+        <AnimatePresence mode="wait">
+          <div key={activeDay} className="space-y-4">
+            {currentDay?.activities.map((activity, index) => {
+              const Icon = getActivityIcon(activity.type);
+              const colorClass = getActivityColor(activity.type);
 
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="relative pl-14"
-              >
+              return (
+                <motion.div
+                  key={`${activeDay}-${index}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ 
+                    delay: index * 0.1,
+                    duration: 0.3,
+                    ease: "easeOut"
+                  }}
+                  className="relative pl-14"
+                >
                 {/* Icon */}
                 <div className={cn(
                   "absolute left-0 w-12 h-12 rounded-xl border flex items-center justify-center",
@@ -155,37 +173,76 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
                 </div>
 
                 {/* Content Card */}
-                <div className={cn(
-                  "p-4 rounded-xl border transition-all",
-                  activity.type === 'transport' 
-                    ? "bg-blue-500/5 border-blue-500/20" 
-                    : "bg-card/50 border-border/50 hover:border-border"
-                )}>
-                  {/* Time & Cost */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-3.5 h-3.5" />
-                      {activity.time}
-                      {activity.duration_minutes && (
-                        <span className="text-xs">
-                          · {activity.duration_minutes} min
-                        </span>
-                      )}
+                <motion.div 
+                  className={cn(
+                    "p-4 rounded-xl border transition-all cursor-pointer shadow-sm",
+                    activity.type === 'transport' 
+                      ? "bg-blue-500/5 border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20" 
+                      : "bg-card/50 border-border/50 hover:border-border hover:shadow-lg hover:shadow-primary/10"
+                  )}
+                  whileHover={{ 
+                    scale: 1.02,
+                    y: -4,
+                    transition: { duration: 0.2, ease: "easeOut" }
+                  }}
+                >
+                  {/* Time Badge & Category Icon */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {/* Time Badge - Bold and Distinct */}
+                      <div className={cn(
+                        "px-3 py-1.5 rounded-lg font-bold text-sm border",
+                        activity.type === 'transport'
+                          ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                          : activity.type === 'food'
+                          ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                          : activity.type === 'sightseeing'
+                          ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                          : "bg-primary/20 text-primary border-primary/30"
+                      )}>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{activity.time}</span>
+                        </div>
+                        {activity.duration_minutes && (
+                          <div className="text-xs font-normal mt-0.5 opacity-80">
+                            {activity.duration_minutes} min
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Category Icon & Label */}
+                      <div className={cn(
+                        "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                        colorClass
+                      )}>
+                        <Icon className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{getCategoryLabel(activity.type)}</span>
+                      </div>
                     </div>
-                    <div className="font-mono text-sm font-medium text-foreground">
+                    
+                    {/* Cost */}
+                    <div className="font-mono text-sm font-bold text-foreground">
                       {currencySymbol}{activity.cost.toLocaleString()}
                     </div>
                   </div>
 
                   {/* Activity Name */}
-                  <h3 className="font-semibold text-foreground mb-1">
+                  <h3 className="font-semibold text-lg text-foreground mb-2">
                     {activity.activity}
                   </h3>
 
+                  {/* Description if available */}
+                  {(activity as any).description && (
+                    <p className="text-sm text-muted-foreground mb-2 italic">
+                      {(activity as any).description}
+                    </p>
+                  )}
+
                   {/* Location */}
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{activity.location_name}</span>
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+                    <span className="truncate font-medium">{activity.location_name}</span>
                   </div>
 
                   {/* Transport Details (for transport type) */}
@@ -222,11 +279,12 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
                       💡 {activity.notes}
                     </p>
                   )}
-                </div>
+                </motion.div>
               </motion.div>
             );
           })}
-        </div>
+          </div>
+        </AnimatePresence>
       </div>
     </div>
   );
