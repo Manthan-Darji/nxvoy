@@ -68,8 +68,8 @@ serve(async (req) => {
   }
 
   try {
-    const { origin, destination, startDate, endDate, budget, currency, preferences } = await req.json();
-    console.log("[generate-trip-plan] Input:", { origin, destination, startDate, endDate, budget, currency, preferences });
+    const { origin, destination, startDate, endDate, budget, currency, preferences, travelers, hidden_gems } = await req.json();
+    console.log("[generate-trip-plan] Input:", { origin, destination, startDate, endDate, budget, currency, preferences, travelers, hidden_gems });
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
@@ -98,6 +98,25 @@ serve(async (req) => {
     // Build concise prompt
     const vibesText = preferences?.length > 0 ? preferences.join(', ') : 'general sightseeing';
     
+    // Build traveler context
+    let travelerContext = '';
+    if (travelers && travelers.travelers && travelers.travelers.length > 0) {
+      const travelerDescriptions = travelers.travelers.map((t: { age: number; gender: string }, i: number) => 
+        `Person ${i + 1}: Age ${t.age}, ${t.gender}`
+      ).join('; ');
+      travelerContext = `\n\nTRAVEL GROUP (${travelers.total} people): ${travelerDescriptions}
+IMPORTANT: Tailor activities specifically for this group's demographics:
+- For travelers under 25: Include nightlife, adventure sports, trendy cafes, Instagram-worthy spots
+- For travelers 25-40: Mix of culture, food experiences, moderate adventure
+- For travelers 40-60: Focus on heritage, comfortable dining, scenic spots, wellness
+- For travelers over 60: Prioritize accessibility, cultural experiences, gentle walks, heritage sites`;
+    }
+
+    let hiddenGemsContext = '';
+    if (hidden_gems) {
+      hiddenGemsContext = `\n\nHIDDEN GEMS MODE ACTIVATED: For at least 30% of activities, suggest NON-TOURISTY, underrated, local-secret spots. Mark these activities by adding "🔶 HIDDEN GEM:" prefix to their activity name. These should be places locals love but tourists rarely visit. Include hole-in-the-wall restaurants, secret viewpoints, lesser-known temples/sites, local markets, and neighborhood gems.`;
+    }
+
     // Maximum token budget for hyper-dense schedules (8-9 activities per day)
     // Set to 8192 (maximum for Flash model) to ensure long responses aren't cut off
     const maxTokens = 8192;
@@ -105,7 +124,7 @@ serve(async (req) => {
     const prompt = `Create a ${days}-day HYPER-DENSE trip itinerary from ${origin} to ${destination}.
 Dates: ${startDate} to ${endDate}
 Budget: ${currency} ${budget}
-Style: ${vibesText}
+Style: ${vibesText}${travelerContext}${hiddenGemsContext}
 
 MANDATORY STRUCTURE REQUIREMENT:
 For EVERY single day, you MUST provide entries for ALL of these specific time slots (8-9 activities minimum):

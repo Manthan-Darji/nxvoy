@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, Calendar, Wallet, Sparkles, ChevronLeft, X, Locate } from 'lucide-react';
+import TravelerDetailsStep, { TravelerData } from './TravelerDetailsStep';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -286,6 +287,12 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
     preferences: [],
   });
 
+  const [travelerData, setTravelerData] = useState<TravelerData>({
+    total: 1,
+    travelers: [{ age: 25, gender: 'prefer-not-to-say' }],
+    hiddenGems: false,
+  });
+
   // Smart search for destinations - prioritizes Indian cities with prefix matching
   useEffect(() => {
     if (tripData.destination.length > 0) {
@@ -375,6 +382,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
         budget: budgetValue,
         currency: tripData.currency,
         preferences: tripData.preferences,
+        travelers: travelerData,
+        hidden_gems: travelerData.hiddenGems,
       };
 
       const isRetryable = (err: unknown) => {
@@ -478,7 +487,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
   };
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep(prev => prev + 1);
     } else {
       // Start the actual trip generation
@@ -531,6 +540,8 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
         return tripData.budget.trim().length > 0 && parseFloat(tripData.budget) > 0;
       case 4:
         return true; // Preferences are optional
+      case 5:
+        return travelerData.travelers.every(t => t.age > 0);
       default:
         return false;
     }
@@ -582,7 +593,7 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
         
         {/* Progress dots */}
         <div className="flex gap-1.5 sm:gap-2">
-          {[0, 1, 2, 3, 4].map((step) => (
+          {[0, 1, 2, 3, 4, 5].map((step) => (
             <div
               key={step}
               className={cn(
@@ -1067,13 +1078,29 @@ const TripWizard = ({ onClose }: TripWizardProps) => {
               <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleNext}
+                  className="btn-primary-gradient border-0 px-8 h-12 min-h-[48px] w-full sm:w-auto"
+                >
+                  Continue
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 5: Travel Group & Hidden Gems */}
+          {currentStep === 5 && (
+            <>
+              <TravelerDetailsStep data={travelerData} onChange={setTravelerData} />
+              <div className="flex justify-center pt-4 w-full max-w-xl">
+                <Button
+                  onClick={handleNext}
+                  disabled={!isStepValid()}
                   className="btn-primary-gradient border-0 px-8 h-12 gap-2 min-h-[48px] w-full sm:w-auto"
                 >
                   <Sparkles className="w-4 h-4" />
                   Let Shasa Plan My Trip
                 </Button>
               </div>
-            </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
