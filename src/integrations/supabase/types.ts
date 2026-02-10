@@ -49,6 +49,39 @@ export type Database = {
           },
         ]
       }
+      hidden_gem_cache: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          location: string
+          min_age: number | null
+          place_name: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location: string
+          min_age?: number | null
+          place_name: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string
+          min_age?: number | null
+          place_name?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       itineraries: {
         Row: {
           category: string | null
@@ -228,6 +261,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trip_requests: {
+        Row: {
+          created_at: string
+          demographics: Json | null
+          id: string
+          location: string
+          settings: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          demographics?: Json | null
+          id?: string
+          location: string
+          settings?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          demographics?: Json | null
+          id?: string
+          location?: string
+          settings?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       trips: {
         Row: {
