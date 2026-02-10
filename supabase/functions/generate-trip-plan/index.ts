@@ -5,26 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are an obsessive, high-energy travel planner. You MUST generate a minute-by-minute itinerary. Return ONLY valid JSON - no markdown, no explanations.
+const SYSTEM_PROMPT = `You are a travel planner. Return ONLY valid JSON - no markdown, no explanations. Keep descriptions under 15 words.
 
 CRITICAL RULES:
 1. Return parseable JSON only
 2. Use realistic Indian prices (buses ₹300-1500, hotels ₹800-3000/night, meals ₹100-500)
 3. STRICTLY respect budget
-4. HYPER-DENSITY RULE: For EVERY day, you MUST provide entries for ALL of these specific time slots:
-   * 08:00 AM - Breakfast / Morning Start
-   * 09:30 AM - Activity 1 (Sightseeing)
-   * 11:30 AM - Activity 2 (Hidden Gem/Culture)
-   * 01:00 PM - Lunch (Specific Famous Restaurant)
-   * 02:30 PM - Activity 3 (Adventure/Museum)
-   * 04:30 PM - Activity 4 (Relax/Coffee/Snack)
-   * 06:30 PM - Activity 5 (Sunset/Viewpoint)
-   * 08:00 PM - Dinner
-   * 09:30 PM - Nightlife/Walk
-   This means MINIMUM 8-9 distinct activities per day. NO EXCEPTIONS.
-5. NO GROUPING RULE: Do not group activities. "Visit Museum and Park" is WRONG. Split them into two distinct JSON objects with different times. Each activity must be a separate entry.
-6. NO LAZY DAYS: Never suggest "Free time" or "Relax at hotel" unless it is after 10 PM. The user wants to see everything. Every moment must be filled with a specific activity.
-7. CONTENT RULE: Prioritize ONLY famous, 4.5+ star rated landmarks and viral food spots. No generic 'walk in park' entries unless it is a famous park (e.g., Central Park, Hyde Park).
+4. Provide the number of activities per day as specified in the user prompt
+5. Each activity must be a separate JSON object - no grouping
+6. Keep description fields SHORT (under 15 words)
 8. STRUCTURE: Every activity MUST have:
    - Specific time (HH:MM AM/PM format matching the required slots above)
    - location_name: Exact Google Maps name of the place
@@ -117,42 +106,47 @@ IMPORTANT: Tailor activities specifically for this group's demographics:
       hiddenGemsContext = `\n\nHIDDEN GEMS MODE ACTIVATED: For at least 30% of activities, suggest NON-TOURISTY, underrated, local-secret spots. Mark these activities by adding "🔶 HIDDEN GEM:" prefix to their activity name. These should be places locals love but tourists rarely visit. Include hole-in-the-wall restaurants, secret viewpoints, lesser-known temples/sites, local markets, and neighborhood gems.`;
     }
 
-    // Maximum token budget for hyper-dense schedules (8-9 activities per day)
-    // Set to 8192 (maximum for Flash model) to ensure long responses aren't cut off
+    // Scale token budget and activity density based on trip length
     const maxTokens = 8192;
+    const activitiesPerDay = days <= 4 ? 8 : days <= 7 ? 6 : 4;
 
-    const prompt = `Create a ${days}-day HYPER-DENSE trip itinerary from ${origin} to ${destination}.
+    const timeSlots = activitiesPerDay <= 4 
+      ? `- 08:00 AM - Breakfast (specific restaurant/cafe)
+- 11:00 AM - Main Activity (specific landmark/monument)
+- 01:00 PM - Lunch (specific famous restaurant)
+- 04:00 PM - Afternoon Activity (sightseeing/culture)` 
+      : activitiesPerDay <= 6
+      ? `- 08:00 AM - Breakfast (specific restaurant/cafe)
+- 10:00 AM - Activity 1 (Sightseeing)
+- 12:30 PM - Lunch (specific famous restaurant)
+- 02:30 PM - Activity 2 (Adventure/Museum)
+- 05:00 PM - Activity 3 (Sunset/Viewpoint)
+- 08:00 PM - Dinner (specific restaurant)`
+      : `- 08:00 AM - Breakfast / Morning Start
+- 09:30 AM - Activity 1 (Sightseeing)
+- 11:30 AM - Activity 2 (Culture)
+- 01:00 PM - Lunch (Famous Restaurant)
+- 02:30 PM - Activity 3 (Adventure/Museum)
+- 04:30 PM - Activity 4 (Relax/Coffee)
+- 06:30 PM - Activity 5 (Sunset/Viewpoint)
+- 08:00 PM - Dinner`;
+
+    const prompt = `Create a ${days}-day trip itinerary from ${origin} to ${destination}.
 Dates: ${startDate} to ${endDate}
 Budget: ${currency} ${budget}
 Style: ${vibesText}${travelerContext}${hiddenGemsContext}
 
-MANDATORY STRUCTURE REQUIREMENT:
-For EVERY single day, you MUST provide entries for ALL of these specific time slots (8-9 activities minimum):
-- 08:00 AM - Breakfast / Morning Start (specific restaurant/cafe name)
-- 09:30 AM - Activity 1 (Sightseeing - specific landmark/monument)
-- 11:30 AM - Activity 2 (Hidden Gem/Culture - specific museum/gallery/temple)
-- 01:00 PM - Lunch (Specific Famous Restaurant - exact name)
-- 02:30 PM - Activity 3 (Adventure/Museum - specific activity name)
-- 04:30 PM - Activity 4 (Relax/Coffee/Snack - specific cafe/snack spot)
-- 06:30 PM - Activity 5 (Sunset/Viewpoint - specific location)
-- 08:00 PM - Dinner (Specific Famous Restaurant - exact name)
-- 09:30 PM - Nightlife/Walk (specific area/market/street)
+For EVERY day, provide ${activitiesPerDay} activities using these time slots:
+${timeSlots}
 
-CRITICAL REQUIREMENTS:
-- Day 1: Include transport from ${origin} to ${destination} (can be at 08:00 AM or earlier)
-- Last day: Include return transport (can be at 09:30 PM or later)
-- NO GROUPING: Each activity must be a separate JSON object. "Visit Museum and Park" is FORBIDDEN. Split into two entries.
-- NO LAZY TIME: Never suggest "Free time", "Relax at hotel", or "Explore on your own" unless it's after 10 PM. Every moment must have a specific, named activity.
-- QUALITY: Prioritize ONLY famous, 4.5+ star rated landmarks and viral food spots
-- NO generic activities like "walk in park" unless it's a world-famous park
-- Each activity must have:
-  * Exact time matching the slots above (e.g., "08:00 AM", "01:00 PM")
-  * Exact Google Maps location name
-  * Full address with city name
-  * Brief description of why it's famous
+REQUIREMENTS:
+- Day 1: Include transport from ${origin} to ${destination}
+- Last day: Include return transport
+- Each activity = separate JSON object (no grouping)
+- Use real, famous places with exact Google Maps names and full addresses with city
 - Stay within budget of ${currency} ${budget}
-
-Generate a HYPER-DENSE itinerary with 8-9 distinct activities per day. Use real, famous places only. Every time slot must be filled.`;
+- Keep descriptions SHORT (under 15 words)
+- Return ONLY valid JSON, no markdown`;
 
     console.log("[generate-trip-plan] Calling AI gateway with optimized settings...");
     
@@ -233,13 +227,22 @@ Generate a HYPER-DENSE itinerary with 8-9 distinct activities per day. Use real,
           cleanJson = cleanJson.substring(jsonStartIndex, jsonEndIndex + 1);
         }
         
-        // Validate JSON structure
+        // Repair truncated JSON by closing open brackets/braces
         const openBraces = (cleanJson.match(/{/g) || []).length;
         const closeBraces = (cleanJson.match(/}/g) || []).length;
+        const openBrackets = (cleanJson.match(/\[/g) || []).length;
+        const closeBrackets = (cleanJson.match(/\]/g) || []).length;
         
-        if (openBraces !== closeBraces) {
-          console.error("[generate-trip-plan] JSON brace mismatch");
-          throw new Error("Incomplete JSON response");
+        if (openBraces !== closeBraces || openBrackets !== closeBrackets) {
+          console.warn("[generate-trip-plan] JSON truncated, attempting repair...");
+          // Remove trailing partial entry (incomplete object/string)
+          cleanJson = cleanJson.replace(/,\s*\{[^}]*$/, '');
+          cleanJson = cleanJson.replace(/,\s*"[^"]*$/, '');
+          // Close remaining open brackets and braces
+          const missingBrackets = openBrackets - (cleanJson.match(/\]/g) || []).length;
+          const missingBraces = openBraces - (cleanJson.match(/}/g) || []).length;
+          for (let i = 0; i < missingBrackets; i++) cleanJson += ']';
+          for (let i = 0; i < missingBraces; i++) cleanJson += '}';
         }
         
         tripPlan = JSON.parse(cleanJson);
