@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { HiddenGemBadge, VideoSourcePlaceholder } from './HiddenGemBadge';
 
 interface TripActivity {
   time: string;
@@ -150,6 +151,10 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
             {currentDay?.activities.map((activity, index) => {
               const Icon = getActivityIcon(activity.type);
               const colorClass = getActivityColor(activity.type);
+              const isHiddenGem = activity.activity.startsWith('🔶 HIDDEN GEM:');
+              const displayName = isHiddenGem
+                ? activity.activity.replace('🔶 HIDDEN GEM:', '').trim()
+                : activity.activity;
 
               return (
                 <motion.div
@@ -176,9 +181,11 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
                 <motion.div 
                   className={cn(
                     "p-4 rounded-xl border transition-all cursor-pointer shadow-sm",
-                    activity.type === 'transport' 
-                      ? "bg-blue-500/5 border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20" 
-                      : "bg-card/50 border-border/50 hover:border-border hover:shadow-lg hover:shadow-primary/10"
+                    isHiddenGem
+                      ? "bg-amber-500/5 border-amber-500/20 hover:shadow-lg hover:shadow-amber-500/20"
+                      : activity.type === 'transport' 
+                        ? "bg-blue-500/5 border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20" 
+                        : "bg-card/50 border-border/50 hover:border-border hover:shadow-lg hover:shadow-primary/10"
                   )}
                   whileHover={{ 
                     scale: 1.02,
@@ -228,9 +235,12 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
                   </div>
 
                   {/* Activity Name */}
-                  <h3 className="font-semibold text-lg text-foreground mb-2">
-                    {activity.activity}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="font-semibold text-lg text-foreground">
+                      {displayName}
+                    </h3>
+                    {isHiddenGem && <HiddenGemBadge />}
+                  </div>
 
                   {/* Description if available */}
                   {(activity as any).description && (
@@ -279,6 +289,9 @@ const TripResultTimeline = React.forwardRef<HTMLDivElement, TripResultTimelinePr
                       💡 {activity.notes}
                     </p>
                   )}
+
+                  {/* Hidden Gem Video Source */}
+                  {isHiddenGem && <VideoSourcePlaceholder />}
                 </motion.div>
               </motion.div>
             );
